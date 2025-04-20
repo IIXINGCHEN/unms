@@ -630,7 +630,7 @@
                 <li><code>pages</code>: (可选) 返回结果页码，默认为 <code>1</code>。</li>
             </ul>
             <strong>示例 URL:</strong>
-            <pre><code>https://<span class="placeholder">[你的域名]</span>/search?name=<span class="placeholder">[关键字]</span>&amp;source=kugou</code></pre>
+            <pre><code><span class="placeholder">[你的域名]</span>/search?name=<span class="placeholder">[关键字]</span>&amp;source=kugou</code></pre>
             <strong>成功响应:</strong>
             <p>返回一个包含歌曲列表的 JSON 对象。每个歌曲对象包含 <code>id</code> (曲目ID), <code>name</code>, <code>artist</code>,
                 <code>album</code>, <code>pic_id</code>, <code>lyric_id</code>, <code>source</code> 等字段。
@@ -651,7 +651,7 @@
                 </li>
             </ul>
             <strong>示例 URL:</strong>
-            <pre><code>https://<span class="placeholder">[你的域名]</span>/url?id=<span class="placeholder">[歌曲ID]</span>&amp;source=kuwo&amp;br=320</code></pre>
+            <pre><code><span class="placeholder">[你的域名]</span>/url?id=<span class="placeholder">[歌曲ID]</span>&amp;source=kuwo&amp;br=320</code></pre>
             <strong>成功响应:</strong>
             <p>返回包含歌曲链接信息的 JSON 对象，主要字段有 <code>url</code>, <code>br</code> (实际音质), <code>size</code>,
                 <code>source</code>。如果配置了代理且链接需要代理，还会包含 <code>proxyUrl</code>。
@@ -669,7 +669,7 @@
                 <li><code>size</code>: (可选) 请求的图片尺寸 (<code>300</code> 或 <code>500</code>)。默认为 <code>300</code>。</li>
             </ul>
             <strong>示例 URL:</strong>
-            <pre><code>https://<span class="placeholder">[你的域名]</span>/pic?id=<span class="placeholder">[专辑图ID]</span>&amp;source=kugou&amp;size=500</code></pre>
+            <pre><code><span class="placeholder">[你的域名]</span>/pic?id=<span class="placeholder">[专辑图ID]</span>&amp;source=kugou&amp;size=500</code></pre>
             <strong>成功响应:</strong>
             <p>返回包含专辑图链接的 JSON 对象，主要字段为 <code>url</code>。</p>
             <p>如果原始请求的源失败，服务器会自动尝试回退到 <code>kugou</code> 源，响应消息会注明，响应数据中会包含 <code>source: 'kugou'</code>。</p>
@@ -685,7 +685,7 @@
                 <li><code>source</code>: (可选) 指定音乐源。默认为 <code>netease</code>。</li>
             </ul>
             <strong>示例 URL:</strong>
-            <pre><code>https://<span class="placeholder">[你的域名]</span>/lyric?id=<span class="placeholder">[歌词ID]</span>&amp;source=qq</code></pre>
+            <pre><code><span class="placeholder">[你的域名]</span>/lyric?id=<span class="placeholder">[歌词ID]</span>&amp;source=qq</code></pre>
             <strong>成功响应:</strong>
             <p>返回包含歌词内容的 JSON 对象，主要字段有 <code>lyric</code> (LRC 歌词) 和 <code>tlyric</code> (翻译歌词，可能不存在)。</p>
             <p>如果原始请求的源失败，服务器会自动尝试回退到 <code>kugou</code> 源，响应消息会注明，响应数据中会包含 <code>source: 'kugou'</code>。</p>
@@ -704,7 +704,7 @@
                 </li>
             </ul>
             <strong>示例 URL:</strong>
-            <pre><code>https://<span class="placeholder">[你的域名]</span>/match?id=<span class="placeholder">[网易云歌曲ID]</span>&amp;server=kuwo,qq</code></pre>
+            <pre><code><span class="placeholder">[你的域名]</span>/match?id=<span class="placeholder">[网易云歌曲ID]</span>&amp;server=kuwo,qq</code></pre>
             <strong>成功响应:</strong>
             <p>返回包含匹配结果的 JSON 对象，其中 `data` 字段包含匹配到的 `url` 等信息。如果配置了代理且链接需要代理，还会包含 `proxyUrl`。</p>
         </article>
