@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>UNM-Server - API 文档</title>
+    <link rel="shortcut icon" href="./favicon.png" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color-light: #f8f9fa;
+            --card-bg-light: #ffffff;
+            --text-color: #212529;
+            --text-color-gray: #6c757d;
+            --icon-color: #6c757d;
+            --accent-color-start: #6e45e2;
+            --accent-color-end: #88d3ce;
+            --shadow-color-light: rgba(0, 0, 0, 0.1);
+            --button-text-color: #ffffff;
+            --json-key-color: #905;
+            --json-string-color: #07a;
+            --json-number-color: #d14;
+            --json-boolean-color: #a0a;
+            --json-null-color: #aaa;
+            --result-bg-light: rgba(0, 0, 0, 0.03);
+            --result-border-light: rgba(0, 0, 0, 0.05);
+            --glow-color: rgba(110, 69, 226, 0.4);
+        }
+
+        html.dark-mode {
+            --bg-color-dark: #0f172a;
+            --card-bg-dark: #1e293b;
+            --text-color: #f8fafc;
+            --text-color-gray: #94a3b8;
+            --icon-color: #94a3b8;
+            --accent-color-start: #8e66ff;
+            --accent-color-end: #97e9e3;
+            --shadow-color-dark: rgba(0, 0, 0, 0.4);
+            --button-text-color: #ffffff;
+            --json-key-color: #c678dd;
+            --json-string-color: #98c379;
+            --json-number-color: #d19a66;
+            --json-boolean-color: #56b6c2;
+            --json-null-color: #abb2bf;
+            --result-bg-dark: rgba(255, 255, 255, 0.05);
+            --result-border-dark: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(142, 102, 255, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            background-color: var(--bg-color-light);
+            color: var(--text-color);
+            font-family: 'Poppins', "PingFang SC", "Open Sans", "Microsoft YaHei", sans-serif;
+            transition: all 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 100%;
+            line-height: 1.6;
+        }
+
+        html.dark-mode body {
+            background-color: var(--bg-color-dark);
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--text-color-gray);
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--accent-color-start);
+        }
+
+        html.dark-mode a:hover {
+            color: var(--accent-color-end);
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 90%;
+            max-width: 900px;
+            margin: 5rem auto 0;
+            padding: 2rem 4rem;
+            background-color: var(--card-bg-light);
+            border-radius: 20px;
+            box-shadow: 0 12px 35px -10px var(--shadow-color-light);
+            transition: all 0.4s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        main::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            pointer-events: none;
+        }
+
+        main:hover::before {
+            opacity: 0.3;
+        }
+
+        html.dark-mode main {
+            background-color: var(--card-bg-dark);
+            box-shadow: 0 12px 40px -10px var(--shadow-color-dark);
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--text-color);
+            background: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        footer {
+            line-height: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        footer .social {
+            color: var(--icon-color);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+
+        footer .social i {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        footer .social i::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color-start), var(--accent-color-end));
+            transition: width 0.3s ease;
+        }
+
+        footer .social i:hover {
+            color: var(--accent-color-start);
+            transform: translateY(-3px);
+        }
+
+        footer .social i:hover::after {
+            width: 100%;
+        }
+
+        html.dark-mode footer .social i:hover {
+            color: var(--accent-color-end);
+        }
+
+        footer .point {
+            display: none;
+        }
+
+        .power,
+        .icp {
+            font-size: 0.875rem;
+            color: var(--text-color-gray);
+        }
+
+        .icp {
+            margin-top: 0.25rem;
+        }
+
+        .result-container {
+            width: 100%;
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background-color: var(--result-bg-light);
+            border-radius: 16px;
+            text-align: left;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.95rem;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid var(--result-border-light);
+            transition: all 0.4s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        html.dark-mode .result-container {
+            background-color: var(--result-bg-dark);
+            border-color: var(--result-border-dark);
+        }
+
+        .result-dl {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.6rem 1rem;
+            color: var(--text-color);
+        }
+
+        .result-dt {
+            font-weight: 600;
+            color: var(--json-key-color);
+            grid-column: 1;
+            overflow-wrap: break-word;
+        }
+
+        .result-dd {
+            grid-column: 2;
+            word-break: break-all;
+        }
+
+        .result-dd .result-dl {
+            margin-top: 0.5rem;
+            margin-left: 1.5rem;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark-mode .result-dd .result-dl {
+            border-left-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .json-string {
+            color: var(--json-string-color);
+        }
+
+        .json-number {
+            color: var(--json-number-color);
+        }
+
+        .json-boolean {
+            color: var(--json-boolean-color);
+            font-style: italic;
+        }
+
+        .json-null {
+            color: var(--json-null-color);
+            font-style: italic;
+        }
+
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color-gray);
+            padding: 1rem;
+        }
+
+        .loading-indicator i {
+            margin-right: 0.5rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message-box {
+            padding: 1.5rem;
+            background-color: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            color: #dc3545;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-5px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .error-message-box strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        html.dark-mode .error-message-box {
+            background-color: rgba(255, 82, 82, 0.15);
+            border-color: rgba(255, 82, 82, 0.3);
+            color: #ff7b7b;
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(30deg);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-toggle i {
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .api-docs-section {
+            width: 90%;
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background-color: var(--card-bg-light);
+            border-radius: 16px;
+            box-shadow: 0 8px 25px -8px var(--shadow-color-light);
+            transition: all 0.4s ease;
+            text-align: left;
+        }
+
+        html.dark-mode .api-docs-section {
+            background-color: var(--card-bg-dark);
+            box-shadow: 0 8px 30px -8px var(--shadow-color-dark);
+        }
+
+        .api-docs-section h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--result-border-light);
+            color: var(--text-color);
+        }
+
+        html.dark-mode .api-docs-section h2 {
+            border-bottom-color: var(--result-border-dark);
+        }
+
+        .api-endpoint {
+            margin-bottom: 2.5rem;
+        }
+
+        .api-endpoint h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            color: var(--accent-color-start);
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+
+        html.dark-mode .api-endpoint h3 {
+            color: var(--accent-color-end);
+        }
+
+        .api-endpoint p {
+            margin-bottom: 0.8rem;
+            color: var(--text-color-gray);
+            line-height: 1.7;
+        }
+
+        .api-endpoint strong {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        html.dark-mode .api-endpoint strong {
+            color: #e2e8f0;
+        }
+
+        .api-endpoint ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 1rem;
+        }
+
+        .api-endpoint li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5em;
+            position: relative;
+        }
+
+        .api-endpoint li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color-start);
+            font-size: 0.9em;
+            top: 1px;
+        }
+
+        html.dark-mode .api-endpoint li::before {
+            color: var(--accent-color-end);
+        }
+
+        .api-endpoint code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background-color: var(--result-bg-light);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--json-string-color);
+        }
+
+        html.dark-mode .api-endpoint code {
+            background-color: var(--result-bg-dark);
+        }
+
+        .api-endpoint pre code {
+            display: block;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            background-color: var(--result-bg-light);
+            border: 1px solid var(--result-border-light);
+            color: var(--text-color);
+        }
+
+        html.dark-mode .api-endpoint pre code {
+            background-color: var(--result-bg-dark);
+            border-color: var(--result-border-dark);
+            color: #cbd5e1;
+        }
+
+        .api-endpoint pre code .placeholder {
+            color: var(--json-number-color);
+            font-style: italic;
+        }
+
+        .control button,
+        .control a.button-link {
+            background-image: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+            border: none;
+            border-radius: 12px;
+            padding: 0.8rem 1.5rem;
+            transition: all 0.3s ease;
+            color: var(--button-text-color);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px -5px var(--accent-color-start);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-width: 150px;
+            text-decoration: none;
+        }
+
+        .control button::after,
+        .control a.button-link::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .control button:hover,
+        .control a.button-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px var(--accent-color-start);
+        }
+
+        .control button:hover::after,
+        .control a.button-link:hover::after {
+            transform: translateX(100%);
+        }
+
+        .control button i,
+        .control a.button-link i {
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+
+        .control {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <div class="particles" id="particles"></div>
+
+    <main>
+        <div class="title" style="margin-bottom: 1rem;">API 使用示例</div>
+        <div class="control">
+            <a href="/" class="button-link">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>返回主页</span>
+            </a>
+        </div>
+        <div id="test-result-container" class="result-container" style="display: none;"></div>
+    </main>
+
+    <section class="api-docs-section">
+        <h2>API 使用示例</h2>
+
+        <article class="api-endpoint">
+            <h3>GET /search</h3>
+            <p>根据关键字搜索歌曲。</p>
+            <strong>参数:</strong>
+            <ul>
+                <li><code>name</code>: <strong>(必需)</strong> 搜索关键字（歌曲名、歌手名、专辑名）。</li>
+                <li><code>source</code>: (可选) 指定音乐源 (如 <code>netease</code>, <code>kugou</code>, <code>kuwo</code>,
+                    <code>migu</code> 等)。默认为 <code>netease</code>。注意：部分源可能失效。
+                </li>
+                <li><code>count</code>: (可选) 返回结果数量，默认为 <code>20</code>。</li>
+                <li><code>pages</code>: (可选) 返回结果页码，默认为 <code>1</code>。</li>
+            </ul>
+            <strong>示例 URL:</strong>
+            <pre><code>https://<span class="placeholder">[你的域名]</span>/search?name=<span class="placeholder">[关键字]</span>&amp;source=kugou</code></pre>
+            <strong>成功响应:</strong>
+            <p>返回一个包含歌曲列表的 JSON 对象。每个歌曲对象包含 <code>id</code> (曲目ID), <code>name</code>, <code>artist</code>,
+                <code>album</code>, <code>pic_id</code>, <code>lyric_id</code>, <code>source</code> 等字段。
+            </p>
+            <p>如果原始请求的源失败，服务器会自动尝试回退到 <code>kugou</code> 源，响应消息会注明。</p>
+        </article>
+
+        <article class="api-endpoint">
+            <h3>GET /url</h3>
+            <p>获取指定歌曲 ID 的播放链接。</p>
+            <strong>参数:</strong>
+            <ul>
+                <li><code>id</code>: <strong>(必需)</strong> 歌曲的 Track ID (可通过 <code>/search</code> 接口获取)。</li>
+                <li><code>source</code>: (可选) 指定音乐源。默认为 <code>netease</code>。</li>
+                <li><code>br</code>: (可选) 请求的音质 (<code>128</code>, <code>192</code>, <code>320</code>, <code>740</code>
+                    (FLAC),
+                    <code>999</code> (FLAC))。默认为 <code>999</code>。
+                </li>
+            </ul>
+            <strong>示例 URL:</strong>
+            <pre><code>https://<span class="placeholder">[你的域名]</span>/url?id=<span class="placeholder">[歌曲ID]</span>&amp;source=kuwo&amp;br=320</code></pre>
+            <strong>成功响应:</strong>
+            <p>返回包含歌曲链接信息的 JSON 对象，主要字段有 <code>url</code>, <code>br</code> (实际音质), <code>size</code>,
+                <code>source</code>。如果配置了代理且链接需要代理，还会包含 <code>proxyUrl</code>。
+            </p>
+            <p>如果原始请求的源失败，服务器会自动尝试回退到 <code>kugou</code> 源，响应消息和 <code>source</code> 字段会注明。</p>
+        </article>
+
+        <article class="api-endpoint">
+            <h3>GET /pic</h3>
+            <p>获取指定专辑图 ID 的图片链接。</p>
+            <strong>参数:</strong>
+            <ul>
+                <li><code>id</code>: <strong>(必需)</strong> 专辑图的 Pic ID (可通过 <code>/search</code> 接口获取)。</li>
+                <li><code>source</code>: (可选) 指定音乐源。默认为 <code>netease</code>。</li>
+                <li><code>size</code>: (可选) 请求的图片尺寸 (<code>300</code> 或 <code>500</code>)。默认为 <code>300</code>。</li>
+            </ul>
+            <strong>示例 URL:</strong>
+            <pre><code>https://<span class="placeholder">[你的域名]</span>/pic?id=<span class="placeholder">[专辑图ID]</span>&amp;source=kugou&amp;size=500</code></pre>
+            <strong>成功响应:</strong>
+            <p>返回包含专辑图链接的 JSON 对象，主要字段为 <code>url</code>。</p>
+            <p>如果原始请求的源失败，服务器会自动尝试回退到 <code>kugou</code> 源，响应消息会注明，响应数据中会包含 <code>source: 'kugou'</code>。</p>
+        </article>
+
+        <article class="api-endpoint">
+            <h3>GET /lyric</h3>
+            <p>获取指定歌词 ID 的歌词内容。</p>
+            <strong>参数:</strong>
+            <ul>
+                <li><code>id</code>: <strong>(必需)</strong> 歌词的 Lyric ID (通常与歌曲 ID 相同，可通过 <code>/search</code> 接口获取)。
+                </li>
+                <li><code>source</code>: (可选) 指定音乐源。默认为 <code>netease</code>。</li>
+            </ul>
+            <strong>示例 URL:</strong>
+            <pre><code>https://<span class="placeholder">[你的域名]</span>/lyric?id=<span class="placeholder">[歌词ID]</span>&amp;source=qq</code></pre>
+            <strong>成功响应:</strong>
+            <p>返回包含歌词内容的 JSON 对象，主要字段有 <code>lyric</code> (LRC 歌词) 和 <code>tlyric</code> (翻译歌词，可能不存在)。</p>
+            <p>如果原始请求的源失败，服务器会自动尝试回退到 <code>kugou</code> 源，响应消息会注明，响应数据中会包含 <code>source: 'kugou'</code>。</p>
+        </article>
+
+        <article class="api-endpoint">
+            <h3>GET /match</h3>
+            <p>（<strong>注意:</strong> 此接口直接调用 <code>@unblockneteasemusic/server</code> 核心库进行匹配，不使用 GDStudio
+                API，无回退逻辑）。根据网易云歌曲
+                ID 尝试从多个音源匹配可播放链接。</p>
+            <strong>参数:</strong>
+            <ul>
+                <li><code>id</code>: <strong>(必需)</strong> 网易云歌曲的 ID。</li>
+                <li><code>server</code>: (可选) 指定要尝试匹配的音源列表（逗号分隔，如 <code>kuwo,migu,qq</code>）。默认为一组内置音源（见
+                    <code>routes/index.js</code> 代码）。
+                </li>
+            </ul>
+            <strong>示例 URL:</strong>
+            <pre><code>https://<span class="placeholder">[你的域名]</span>/match?id=<span class="placeholder">[网易云歌曲ID]</span>&amp;server=kuwo,qq</code></pre>
+            <strong>成功响应:</strong>
+            <p>返回包含匹配结果的 JSON 对象，其中 `data` 字段包含匹配到的 `url` 等信息。如果配置了代理且链接需要代理，还会包含 `proxyUrl`。</p>
+        </article>
+    </section>
+
+    <footer>
+        <div class="social">
+            <i class="fa-brands fa-github" onclick="socialJump('github')" title="GitHub"></i>
+            <i class="fa-solid fa-house" onclick="socialJump('home')" title="主页"></i>
+            <i class="fa-solid fa-envelope" onclick="socialJump('email')" title="邮件联系"></i>
+        </div>
+        <div class="power">
+            Copyright © 2020
+            <script>
+                document.write(" - " + new Date().getFullYear());
+            </script>
+            <a href="https://imsyy.top/" target="_blank">imsyy.top</a>
+        </div>
+        <div class="icp">
+            <a href="https://beian.miit.gov.cn/" target="_blank">Copyright@ Focalors - 2025</a>
+        </div>
+    </footer>
+
+    <script src="/script.js" defer></script>
+</body>
+
+</html>

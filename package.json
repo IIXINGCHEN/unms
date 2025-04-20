@@ -1,16 +1,18 @@
 {
   "name": "unm-server",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "网易云解灰-API服务",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "npx nodemon index.js",
-    "prd": "pm2 start index.js",
-    "build": "node index.js"
+    "dev": "npx nodemon index.js"
   },
   "author": "imsyy",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@9.15.4",
   "dependencies": {
     "@unblockneteasemusic/server": "latest",
     "axios": "^1.8.4",
@@ -21,7 +23,6 @@
     "koa-static": "^5.0.0",
     "koa-views": "^8.1.0",
     "koa2-cors": "^2.0.6",
-    "nodemon": "^2.0.22",
-    "python": "^0.0.4"
+    "nodemon": "^2.0.22"
   }
 }

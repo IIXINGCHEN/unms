@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config(); // Restored
 const Koa = require("koa");
 const bodyParser = require("koa-bodyparser");
 const cors = require("koa2-cors");
@@ -6,10 +6,10 @@ const serve = require("koa-static");
 const views = require("koa-views");
 
 const app = new Koa();
-const net = require("net");
+const net = require("net"); // Restored
 const router = require("./routes");
 
-// 配置信息
+// 配置信息 - Restored
 let domain = process.env.ALLOWED_DOMAIN || "*";
 let port = process.env.PORT || 5678;
 
@@ -20,18 +20,32 @@ app.use(bodyParser());
 app.use(serve(__dirname + "/public"));
 app.use(views(__dirname + "/public"));
 
-// 跨域
+// 跨域 - Using domain variable now
 app.use(
   cors({
-    origin: domain,
+    origin: domain, // Use the domain variable from .env or default
   })
 );
 
+// Restored domain check middleware
 app.use(async (ctx, next) => {
   if (domain === "*") {
     await next();
   } else {
-    if (ctx.headers.origin === domain || ctx.headers.referer === domain) {
+    // Check if origin or referer matches the allowed domain
+    // Note: This logic might need refinement depending on exact needs
+    const origin = ctx.headers.origin;
+    const referer = ctx.headers.referer;
+    let allowed = false;
+    if (origin && origin.includes(domain)) {
+      allowed = true;
+    } else if (referer && referer.includes(domain)) {
+      allowed = true;
+    }
+    // Simple check if domain is part of origin/referer, adjust if needed
+    // For exact match or multiple domains, modify this logic
+
+    if (allowed) {
       await next();
     } else {
       ctx.status = 403;
@@ -47,14 +61,14 @@ app.use(async (ctx, next) => {
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-// 启动应用程序并监听端口
+// Restored port checking and listening logic
 const startApp = (port) => {
   app.listen(port, () => {
     console.log(`成功在 ${port} 端口上运行`);
   });
 };
 
-// 检测端口是否被占用
+// Restored port checking function
 const checkPort = (port) => {
   return new Promise((resolve, reject) => {
     const server = net
@@ -76,7 +90,7 @@ const checkPort = (port) => {
   });
 };
 
-// 尝试启动应用程序
+// Restored tryStartApp function
 const tryStartApp = async (port) => {
   let isPortAvailable = await checkPort(port);
   while (!isPortAvailable) {
@@ -86,4 +100,7 @@ const tryStartApp = async (port) => {
   startApp(port);
 };
 
+// Restored call to start the server
 tryStartApp(port);
+
+// module.exports = app.callback(); // Removed Vercel export

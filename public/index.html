@@ -5,25 +5,59 @@
   <meta charset="utf-8" />
   <title>UNM-Server</title>
   <link rel="shortcut icon" href="./favicon.png" type="image/x-icon" />
-  <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/6.0.0/css/all.min.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
-      --text-color: #000;
-      --text-color-gray: #888;
-      --text-color-hover: #fff;
-      --icon-color: #444;
+      --bg-color-light: #f8f9fa;
+      --card-bg-light: #ffffff;
+      --text-color: #212529;
+      --text-color-gray: #6c757d;
+      --icon-color: #6c757d;
+      --accent-color-start: #6e45e2;
+      --accent-color-end: #88d3ce;
+      --shadow-color-light: rgba(0, 0, 0, 0.1);
+      --button-text-color: #ffffff;
+      --json-key-color: #905;
+      --json-string-color: #07a;
+      --json-number-color: #d14;
+      --json-boolean-color: #a0a;
+      --json-null-color: #aaa;
+      --result-bg-light: rgba(0, 0, 0, 0.03);
+      --result-border-light: rgba(0, 0, 0, 0.05);
+      --glow-color: rgba(110, 69, 226, 0.4);
     }
 
     html.dark-mode {
-      --text-color: #fff;
-      --text-color-gray: #888;
-      --text-color-hover: #3c3c3c;
-      --icon-color: #cbcbcb;
+      --bg-color-dark: #0f172a;
+      --card-bg-dark: #1e293b;
+      --text-color: #f8fafc;
+      --text-color-gray: #94a3b8;
+      --icon-color: #94a3b8;
+      --accent-color-start: #8e66ff;
+      --accent-color-end: #97e9e3;
+      --shadow-color-dark: rgba(0, 0, 0, 0.4);
+      --button-text-color: #ffffff;
+      --json-key-color: #c678dd;
+      --json-string-color: #98c379;
+      --json-number-color: #d19a66;
+      --json-boolean-color: #56b6c2;
+      --json-null-color: #abb2bf;
+      --result-bg-dark: rgba(255, 255, 255, 0.05);
+      --result-border-dark: rgba(255, 255, 255, 0.1);
+      --glow-color: rgba(142, 102, 255, 0.4);
     }
 
     * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
       -webkit-user-select: none;
       user-select: none;
     }
@@ -33,114 +67,590 @@
     }
 
     body {
-      background-color: var(--text-color-hover);
+      background-color: var(--bg-color-light);
       color: var(--text-color);
-      font-family: "PingFang SC", "Open Sans", "Microsoft YaHei", sans-serif;
-      transition: background-color 0.5s, color 0.5s;
+      font-family: 'Poppins', "PingFang SC", "Open Sans", "Microsoft YaHei", sans-serif;
+      transition: all 0.4s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      height: 100%;
+      min-height: 100%;
+      line-height: 1.6;
     }
 
-    .dark-mode body {
-      background-color: #2a2a2a;
-    }
-
-    main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
+    html.dark-mode body {
+      background-color: var(--bg-color-dark);
     }
 
     a {
       text-decoration: none;
       color: var(--text-color-gray);
-      transition: all 0.5s ease;
+      transition: color 0.3s ease;
     }
 
     a:hover {
-      color: var(--text-color);
+      color: var(--accent-color-start);
+    }
+
+    html.dark-mode a:hover {
+      color: var(--accent-color-end);
+    }
+
+    /* Main Content Card */
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 90%;
+      max-width: 900px;
+      margin: 5rem auto;
+      padding: 4rem;
+      background-color: var(--card-bg-light);
+      border-radius: 20px;
+      box-shadow: 0 12px 35px -10px var(--shadow-color-light);
+      transition: all 0.4s ease;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    main::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      pointer-events: none;
+    }
+
+    main:hover::before {
+      opacity: 0.3;
+    }
+
+    html.dark-mode main {
+      background-color: var(--card-bg-dark);
+      box-shadow: 0 12px 40px -10px var(--shadow-color-dark);
     }
 
     .ico {
-      margin: 4rem 2rem;
-      font-size: 6rem;
-      color: var(--text-color-gray);
+      margin: 0 0 1.5rem 0;
+      position: relative;
     }
 
     .ico img {
-      width: 300px;
-      height: 300px;
+      width: 130px;
+      height: 130px;
+      border-radius: 16px;
+      object-fit: cover;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .ico img:hover {
+      transform: scale(1.05) rotate(2deg);
+      box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.2);
     }
 
     .title {
-      font-size: 2rem;
-      font-weight: bold;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text-color);
+      background: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
     }
 
     .text {
-      margin: 1rem;
+      margin: 0 0 2rem 0;
+      color: var(--text-color-gray);
+      font-size: 1.1rem;
+      max-width: 90%;
+      line-height: 1.7;
+    }
+
+    .control {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
     }
 
     .control button {
-      background-color: var(--text-color-hover);
-      border: var(--text-color) solid;
-      border-radius: 4px;
-      padding: 0.5rem 1rem;
-      transition: all 0.5s ease;
-      margin: 1rem 0.2rem;
-      color: var(--text-color);
+      background-image: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 2rem;
+      transition: all 0.3s ease;
+      color: var(--button-text-color);
       cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 4px 15px -5px var(--accent-color-start);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      min-width: 180px;
+    }
+
+    .control button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
     }
 
     .control button:hover {
-      border: var(--text-color) solid;
-      background: var(--text-color);
-      color: var(--text-color-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px var(--accent-color-start);
+    }
+
+    .control button:hover::after {
+      transform: translateX(100%);
     }
 
     .control button i {
-      margin-right: 6px;
+      margin-right: 8px;
+      font-size: 1.1em;
     }
 
+    /* Footer */
     footer {
       line-height: 1.75rem;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 140px;
+      padding: 2rem 1rem;
+      width: 100%;
+      margin-top: auto;
     }
 
     footer .social {
       color: var(--icon-color);
-      font-size: 15px;
+      font-size: 1.25rem;
       display: flex;
       align-items: center;
+      gap: 1.5rem;
       cursor: pointer;
+      margin-bottom: 1rem;
     }
 
     footer .social i {
-      margin: 0 12px;
+      transition: all 0.3s ease;
+      position: relative;
     }
 
-    footer .point::before {
-      content: "·";
-      color: var(--text-color-gray);
+    footer .social i::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-color-start), var(--accent-color-end));
+      transition: width 0.3s ease;
+    }
+
+    footer .social i:hover {
+      color: var(--accent-color-start);
+      transform: translateY(-3px);
+    }
+
+    footer .social i:hover::after {
+      width: 100%;
+    }
+
+    html.dark-mode footer .social i:hover {
+      color: var(--accent-color-end);
+    }
+
+    footer .point {
+      display: none;
     }
 
     .power,
     .icp {
-      font-size: 14px;
+      font-size: 0.875rem;
+      color: var(--text-color-gray);
+    }
+
+    .icp {
+      margin-top: 0.25rem;
+    }
+
+    /* API Test Result Container */
+    .result-container {
+      width: 100%;
+      margin-top: 2.5rem;
+      padding: 2rem;
+      background-color: var(--result-bg-light);
+      border-radius: 16px;
+      text-align: left;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.95rem;
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid var(--result-border-light);
+      transition: all 0.4s ease;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.5s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    html.dark-mode .result-container {
+      background-color: var(--result-bg-dark);
+      border-color: var(--result-border-dark);
+    }
+
+    /* Key-Value List Styling */
+    .result-dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.6rem 1rem;
+      color: var(--text-color);
+    }
+
+    .result-dt {
+      font-weight: 600;
+      color: var(--json-key-color);
+      grid-column: 1;
+      overflow-wrap: break-word;
+    }
+
+    .result-dd {
+      grid-column: 2;
+      word-break: break-all;
+    }
+
+    /* Styling for nested lists */
+    .result-dd .result-dl {
+      margin-top: 0.5rem;
+      margin-left: 1.5rem;
+      padding-left: 1rem;
+      border-left: 2px solid rgba(0, 0, 0, 0.1);
+    }
+
+    html.dark-mode .result-dd .result-dl {
+      border-left-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Value Type Styling */
+    .json-string {
+      color: var(--json-string-color);
+    }
+
+    .json-number {
+      color: var(--json-number-color);
+    }
+
+    .json-boolean {
+      color: var(--json-boolean-color);
+      font-style: italic;
+    }
+
+    .json-null {
+      color: var(--json-null-color);
+      font-style: italic;
+    }
+
+    /* Loading and Error styles */
+    .loading-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-color-gray);
+      padding: 1rem;
+    }
+
+    .loading-indicator i {
+      margin-right: 0.5rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .error-message-box {
+      padding: 1.5rem;
+      background-color: rgba(255, 0, 0, 0.1);
+      border: 1px solid rgba(255, 0, 0, 0.2);
+      color: #dc3545;
+      border-radius: 12px;
+      font-family: 'Poppins', sans-serif;
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20%,
+      60% {
+        transform: translateX(-5px);
+      }
+
+      40%,
+      80% {
+        transform: translateX(5px);
+      }
+    }
+
+    .error-message-box strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    html.dark-mode .error-message-box {
+      background-color: rgba(255, 82, 82, 0.15);
+      border-color: rgba(255, 82, 82, 0.3);
+      color: #ff7b7b;
+    }
+
+    /* Floating particles animation */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      background: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.3;
+      }
+
+      50% {
+        opacity: 0.6;
+      }
+
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* Theme toggle button */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, var(--accent-color-start), var(--accent-color-end));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.1) rotate(30deg);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .theme-toggle i {
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+    }
+
+    /* Styles for API Docs section */
+    .api-docs-section {
+      width: 90%;
+      max-width: 900px;
+      margin: 3rem auto;
+      /* Spacing below main card */
+      padding: 2rem;
+      background-color: var(--card-bg-light);
+      border-radius: 16px;
+      box-shadow: 0 8px 25px -8px var(--shadow-color-light);
+      transition: all 0.4s ease;
+      text-align: left;
+      /* Align text left for docs */
+    }
+
+    html.dark-mode .api-docs-section {
+      background-color: var(--card-bg-dark);
+      box-shadow: 0 8px 30px -8px var(--shadow-color-dark);
+    }
+
+    .api-docs-section h2 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--result-border-light);
+      color: var(--text-color);
+    }
+
+    html.dark-mode .api-docs-section h2 {
+      border-bottom-color: var(--result-border-dark);
+    }
+
+    .api-endpoint {
+      margin-bottom: 2.5rem;
+    }
+
+    .api-endpoint h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      color: var(--accent-color-start);
+      font-family: 'Fira Code', 'Courier New', monospace;
+    }
+
+    html.dark-mode .api-endpoint h3 {
+      color: var(--accent-color-end);
+    }
+
+    .api-endpoint p {
+      margin-bottom: 0.8rem;
+      color: var(--text-color-gray);
+      line-height: 1.7;
+    }
+
+    .api-endpoint strong {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    html.dark-mode .api-endpoint strong {
+      color: #e2e8f0;
+      /* Slightly lighter text for strong in dark mode */
+    }
+
+
+    .api-endpoint ul {
+      list-style: none;
+      /* Remove default bullets */
+      padding-left: 0;
+      /* Remove default padding */
+      margin-bottom: 1rem;
+    }
+
+    .api-endpoint li {
+      margin-bottom: 0.5rem;
+      padding-left: 1.5em;
+      /* Indent list items */
+      position: relative;
+    }
+
+    .api-endpoint li::before {
+      content: "▸";
+      /* Custom bullet */
+      position: absolute;
+      left: 0;
+      color: var(--accent-color-start);
+      font-size: 0.9em;
+      top: 1px;
+    }
+
+    html.dark-mode .api-endpoint li::before {
+      color: var(--accent-color-end);
+    }
+
+    .api-endpoint code {
+      font-family: 'Fira Code', 'Courier New', monospace;
+      background-color: var(--result-bg-light);
+      padding: 0.2em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+      color: var(--json-string-color);
+      /* Use json string color for inline code */
+    }
+
+    html.dark-mode .api-endpoint code {
+      background-color: var(--result-bg-dark);
+    }
+
+    .api-endpoint pre code {
+      display: block;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      background-color: var(--result-bg-light);
+      /* Use result bg for code blocks */
+      border: 1px solid var(--result-border-light);
+      color: var(--text-color);
+      /* Default text color for code block */
+    }
+
+    html.dark-mode .api-endpoint pre code {
+      background-color: var(--result-bg-dark);
+      border-color: var(--result-border-dark);
+      color: #cbd5e1;
+      /* Lighter default text for dark code block */
+    }
+
+    .api-endpoint pre code .placeholder {
+      color: var(--json-number-color);
+      /* Use number color for placeholders */
+      font-style: italic;
     }
   </style>
 </head>
 
 <body>
+  <!-- Theme toggle button -->
+  <div class="theme-toggle" id="themeToggle">
+    <i class="fas fa-moon"></i>
+  </div>
+
+  <!-- Floating particles -->
+  <div class="particles" id="particles"></div>
+
   <main>
     <div class="ico">
       <img src="./favicon.png" alt="logo">
@@ -152,68 +662,34 @@
         <i class="fa-solid fa-vial"></i>
         <span>测试接口</span>
       </button>
-      <!-- <button onclick="window.open(`https://www.apifox.cn/apidoc/shared-ed2f1803-746b-42bb-8321-b0f0bbc6634c`)">
+      <button onclick="window.location.href='/api-docs.html'">
         <i class="fa-solid fa-book"></i>
-        <span>接口文档</span>
-      </button> -->
+        <span>API 文档</span>
+      </button>
     </div>
+    <!-- Result container -->
+    <div id="test-result-container" class="result-container" style="display: none;"></div>
   </main>
+
   <footer>
     <div class="social">
-      <i class="fa-brands fa-github" onclick="socialJump('github')"></i>
-      <div class="point"></div>
-      <i class="fa-solid fa-house" onclick="socialJump('home')"></i>
-      <div class="point"></div>
-      <i class="fa-solid fa-envelope" onclick="socialJump('email')"></i>
+      <i class="fa-brands fa-github" onclick="socialJump('github')" title="GitHub"></i>
+      <i class="fa-solid fa-house" onclick="socialJump('home')" title="主页"></i>
+      <i class="fa-solid fa-envelope" onclick="socialJump('email')" title="邮件联系"></i>
     </div>
     <div class="power">
       Copyright © 2020
       <script>
         document.write(" - " + new Date().getFullYear());
       </script>
-      <a href="https://imsyy.top/" target="_blank">Focalors Ltd.</a>
+      <a href="https://imsyy.top/" target="_blank">imsyy.top</a>
     </div>
     <div class="icp">
-      <a href="https://beian.miit.gov.cn/" target="_blank">Copyright@ Focalors | Waterbreathing 2020 - 2025</a>
+      <a href="https://beian.miit.gov.cn/" target="_blank">Copyright@ Focalors - 2025</a>
     </div>
   </footer>
-  <script>
-    // 跟随系统主题
-    const darkModeMediaQuery = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    );
-    const toggleDarkMode = (darkModeMediaQuery) => {
-      if (darkModeMediaQuery.matches) {
-        document.documentElement.classList.add("dark-mode");
-      } else {
-        document.documentElement.classList.remove("dark-mode");
-      }
-    };
-    darkModeMediaQuery.addListener(toggleDarkMode);
-    toggleDarkMode(darkModeMediaQuery);
 
-    // 按钮事件
-    const clickFunction = () => {
-      window.location.href = "/test";
-    };
-
-    // 社交链接跳转
-    const socialJump = (type) => {
-      switch (type) {
-        case "github":
-          window.location.href = "https://focalors.ltd/%E4%BF%A1%E6%81%AF%E8%AF%BE%E4%B8%93%E5%8C%BA/404";
-          break;
-        case "home":
-          window.location.href = "https://www.focalors.ltd/";
-          break;
-        case "email":
-          window.location.href = "mailto:noreply@focalors.ltd";
-          break;
-        default:
-          break;
-      }
-    };
-  </script>
+  <script src="/script.js" defer></script>
 </body>
 
 </html>
