@@ -155,19 +155,7 @@ router.get("/test", async (ctx) => {
   // 使用 @unblockneteasemusic/server 的 match 函数测试特定歌曲 ID (416892104)
   // 注意：如果 match 函数需要 cookies 或 keys，应从环境变量中读取并传入
   const data = await match(416892104, [ // 指定要尝试匹配的音源列表
-    "pyncmd",    // 稳定音源
-    "netease",   // 稳定音源
-    "kuwo",      // 稳定音源
-    "joox",      // 稳定音源
-    "tidal",
-    "tencent",
-    "kugou",
-  //  "migu",
-  //  "spotify",
- //   "ytmusic",
- //   "qobuz",
-    //  "deezer",
-   // "ximalaya",
+    "pyncmd", "kuwo", "bilibili", "migu", "kugou", "qq", "youtube", "youtube-dl", "yt-dlp"
   ]).then((res) => { // match 函数返回一个 Promise
     return res; // 返回匹配结果
   });
