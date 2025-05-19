@@ -58,7 +58,6 @@ function get(key) {
     // 如果获取到数据 (缓存命中)
     if (value !== undefined) {
         // 在生产环境中，可以考虑使用更专业的日志库，并调整日志级别
-        // console.debug 仅在 NODE_ENV 不是 'production' 时输出，或者使用特定日志级别控制
         if (process.env.NODE_ENV !== 'production') {
             console.debug(`[Cache HIT] Key: ${key}`); // 记录缓存命中日志
         }
