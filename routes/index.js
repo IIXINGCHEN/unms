@@ -152,12 +152,12 @@ router.get("/test", async (ctx) => {
     "tidal",
     "tencent",
     "kugou",
-    "migu",
-    "spotify",
-    "ytmusic",
-    "qobuz",
-    "deezer",
-    "ximalaya",
+  //  "migu",
+  //  "spotify",
+ //   "ytmusic",
+ //   "qobuz",
+    //  "deezer",
+   // "ximalaya",
   ]).then((res) => { // match 函数返回一个 Promise
     return res; // 返回匹配结果
   });
