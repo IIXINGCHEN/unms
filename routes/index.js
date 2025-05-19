@@ -6,7 +6,7 @@ const match = require("@unblockneteasemusic/server");
 const packageJson = require("../package.json");
 
 // 引入自定义的缓存服务模块
-const cacheService = require('./cacheService'); // 假设 cacheService.js 与 router.js 在同一目录
+const cacheService = require('./cacheService'); 
 
 // --- 配置中心 ---
 
