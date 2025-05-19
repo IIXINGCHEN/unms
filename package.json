@@ -14,7 +14,7 @@
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
-    "@unblockneteasemusic/server": "^0.31.0",
+    "@unblockneteasemusic/server": "latest",
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
     "koa": "^2.15.3",
