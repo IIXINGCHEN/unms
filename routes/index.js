@@ -190,7 +190,7 @@ function validatePositiveIntParam(ctx, value, paramName) {
  */
 function sanitizeUnmResult(matchResult) {
     if (typeof matchResult !== 'object' || matchResult === null || !matchResult.url) {
-        console.warn('Invalid or incomplete result from @unblockneteasemusic/server match:', matchResult);
+        console.warn('Invalid or incomplete result from  match:', matchResult);
         return null;
     }
     return {
@@ -228,26 +228,26 @@ router.get("/info", async (ctx) => {
 router.get("/test", async (ctx) => {
     console.log(`[${new Date().toISOString()}] /test route started for ID ${UNM_SETTINGS.testSongId}`);
     const sourcesToTry = UNM_SETTINGS.defaultSources;
-    console.log(`[${new Date().toISOString()}] Attempting to match with @unblockneteasemusic/server sources: ${sourcesToTry.join(', ')}`);
+    console.log(`[${new Date().toISOString()}] Attempting to match with  sources: ${sourcesToTry.join(', ')}`);
     const startTime = Date.now();
     try {
         const rawData = await match(UNM_SETTINGS.testSongId, sourcesToTry);
         const clientData = sanitizeUnmResult(rawData);
         const duration = Date.now() - startTime;
-        console.log(`[${new Date().toISOString()}] @unblockneteasemusic/server match() completed in ${duration}ms.`);
+        console.log(`[${new Date().toISOString()}]  match() completed in ${duration}ms.`);
 
         if (!clientData) {
             ctx.status = 404;
-            ctx.body = { code: ctx.status, message: "(@unblockneteasemusic/server) 未能从音源获取有效信息。" };
+            ctx.body = { code: ctx.status, message: "未能从音源获取有效信息。" };
             return;
         }
-        ctx.body = { code: 200, message: "获取成功 (@unblockneteasemusic/server)", data: clientData };
+        ctx.body = { code: 200, message: "获取成功 ", data: clientData };
     } catch (error) {
         const duration = Date.now() - startTime;
-        console.error(`[${new Date().toISOString()}] Error in /test route for @unblockneteasemusic/server after ${duration}ms:`, error.message); // Log full error server-side
+        console.error(`[${new Date().toISOString()}] Error in /test route for  after ${duration}ms:`, error.message); // Log full error server-side
         ctx.status = 500;
         // 返回给客户端通用错误消息
-        ctx.body = { code: 500, message: "(@unblockneteasemusic/server) 测试接口处理时发生内部错误。" };
+        ctx.body = { code: 500, message: "测试接口处理时发生内部错误。" };
     }
 });
 
@@ -260,13 +260,13 @@ router.get("/match", async (ctx) => {
             ? ctx.request.query.server.split(",")
             : UNM_SETTINGS.defaultSources;
 
-        console.log(`@unblockneteasemusic/server: 开始匹配 ID '${id}' 使用源: ${serverSources.join(',')}`);
+        console.log(`开始匹配 ID '${id}' 使用源: ${serverSources.join(',')}`);
         const rawData = await match(id, serverSources);
         const clientData = sanitizeUnmResult(rawData);
 
         if (!clientData) {
             ctx.status = 404;
-            ctx.body = { code: ctx.status, message: "(@unblockneteasemusic/server) 未能从音源获取有效信息。" };
+            ctx.body = { code: ctx.status, message: "未能从音源获取有效信息。" };
             return;
         }
         
@@ -275,12 +275,12 @@ router.get("/match", async (ctx) => {
              // 此处代理逻辑是根据用户原代码的特定需求，直接拼接
             clientData.proxyUrl = PROXY_URL_ENV + clientData.url.replace(/^http:\/\//, "http/");
         }
-        ctx.body = { code: 200, message: "匹配成功 (@unblockneteasemusic/server)", data: clientData };
+        ctx.body = { code: 200, message: "匹配成功 ", data: clientData };
     } catch (error) {
-        console.error("@unblockneteasemusic/server 匹配出现错误:", error.message); // Log full error server-side
+        console.error("匹配出现错误:", error.message); // Log full error server-side
         ctx.status = 500;
         // 返回给客户端通用错误消息
-        ctx.body = { code: 500, message: "(@unblockneteasemusic/server) 匹配时发生内部错误。" };
+        ctx.body = { code: 500, message: "匹配时发生内部错误。" };
     }
 });
 
