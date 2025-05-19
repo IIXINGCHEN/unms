@@ -57,10 +57,16 @@ function get(key) {
     const value = cache.get(key);
     // 如果获取到数据 (缓存命中)
     if (value !== undefined) {
-        console.debug(`[Cache HIT] Key: ${key}`); // 记录缓存命中日志
+        // 在生产环境中，可以考虑使用更专业的日志库，并调整日志级别
+        // console.debug 仅在 NODE_ENV 不是 'production' 时输出，或者使用特定日志级别控制
+        if (process.env.NODE_ENV !== 'production') {
+            console.debug(`[Cache HIT] Key: ${key}`); // 记录缓存命中日志
+        }
     } else {
         // 未获取到数据 (缓存未命中)
-        console.debug(`[Cache MISS] Key: ${key}`); // 记录缓存未命中日志
+        if (process.env.NODE_ENV !== 'production') {
+            console.debug(`[Cache MISS] Key: ${key}`); // 记录缓存未命中日志
+        }
     }
     // 返回获取到的值 (可能为 undefined)
     return value;
@@ -77,8 +83,10 @@ function set(key, value, ttl = DEFAULT_TTL_SECONDS) {
     // 如果缓存未启用或键无效，则不进行存储，直接返回 false
     if (!CACHE_ENABLED || !key) return false;
 
-    // 记录缓存设置日志，包含键和TTL
-    console.debug(`[Cache SET] Key: ${key}, TTL: ${ttl}s`);
+    // 记录缓存设置日志
+    if (process.env.NODE_ENV !== 'production') {
+        console.debug(`[Cache SET] Key: ${key}, TTL: ${ttl}s`);
+    }
     // 将数据存入 NodeCache 实例
     return cache.set(key, value, ttl);
 }
@@ -92,7 +100,9 @@ function del(key) {
     // 如果缓存未启用或键无效，则不进行删除操作
     if (!CACHE_ENABLED || !key) return;
     // 记录缓存删除日志
-    console.debug(`[Cache DEL] Key: ${key}`);
+    if (process.env.NODE_ENV !== 'production') {
+        console.debug(`[Cache DEL] Key: ${key}`);
+    }
     // 从 NodeCache 实例中删除数据
     return cache.del(key);
 }
@@ -104,7 +114,9 @@ function flush() {
     // 如果缓存未启用，则不进行清空操作
     if (!CACHE_ENABLED) return;
     // 记录缓存清空日志
-    console.debug('[Cache FLUSH] All cache flushed.');
+    if (process.env.NODE_ENV !== 'production') {
+        console.debug('[Cache FLUSH] All cache flushed.');
+    }
     // 清空 NodeCache 实例中的所有数据
     cache.flushAll();
 }
