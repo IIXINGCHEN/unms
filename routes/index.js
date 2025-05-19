@@ -4,597 +4,364 @@ const Router = require("koa-router");
 const match = require("@unblockneteasemusic/server");
 // 引入 package.json 文件，用于获取项目版本等信息（假设它在上一级目录）
 const packageJson = require("../package.json");
-// 创建一个新的 Koa Router 实例
+
+// --- 配置中心 ---
+const API_CONFIG = {
+    baseUrl: "https://music-api.gdstudio.xyz/api.php",
+    defaultSource: 'netease', // GDStudio API 默认音源 (根据文档)
+    // GDStudio API 支持的有效音源列表 (基于 2025-4-26 文档)
+    validSources: [
+        'netease', 'tencent', 'tidal', 'spotify', 'ytmusic',
+        'qobuz', 'joox', 'deezer', 'migu', 'kugou', 'kuwo', 'ximalaya'
+    ],
+    // 用于 GDStudio API 调用的回退音源 (用户最新代码指定为 'kugou')
+    fallbackSource: 'kugou',
+    requestTimeout: 10000, // API 请求超时时间 (毫秒)
+};
+
+const UNM_API_CONFIG = { // @unblockneteasemusic/server 相关配置
+    // /test 和 /match 路由的默认音源列表 (与 GDStudio API 的 source 参数独立)
+    defaultSources: ["pyncmd", "kuwo", "bilibili", "migu", "kugou", "qq", "youtube", "youtube-dl", "yt-dlp"],
+    testSongId: 416892104, // /test 路由使用的测试歌曲 ID
+};
+
+const PROXY_URL_ENV = process.env.PROXY_URL; // 从环境变量读取代理 URL
+
+// --- 工具函数 ---
+
+/**
+ * 异步调用 GDStudio API
+ * @param {object} params - API 请求参数对象
+ * @returns {Promise<object>} - API 返回的 JSON 数据
+ */
+async function fetchApiData(params) {
+    const apiUrl = new URL(API_CONFIG.baseUrl);
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            apiUrl.searchParams.append(key, value);
+        }
+    });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.requestTimeout);
+
+    try {
+        console.log(`Workspaceing from upstream API: ${apiUrl.toString()}`);
+        const response = await fetch(apiUrl.toString(), { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            console.warn(`Upstream API request failed! URL: ${apiUrl.toString()}, Status: ${response.status}, StatusText: ${response.statusText}`);
+            let errorBody = null;
+            try {
+                const textBody = await response.text();
+                console.warn(`Upstream API response body (text): ${textBody}`);
+                errorBody = JSON.parse(textBody);
+            } catch (e) {
+                console.warn(`Failed to parse upstream API response body as JSON: ${e.message}`);
+            }
+            throw new Error(`API request failed with status ${response.status}. Response: ${JSON.stringify(errorBody) || response.statusText}`);
+        }
+        return await response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            console.error(`Upstream API request timed out: ${apiUrl.toString()}`);
+            throw new Error('API request timed out');
+        }
+        console.error(`Error during fetchApiData for [${apiUrl.toString()}]:`, error);
+        throw error;
+    }
+}
+
+/**
+ * 标准化处理 API 错误并设置 Koa 上下文响应
+ * @param {object} ctx - Koa 上下文对象
+ * @param {Error} error - 捕获到的错误对象
+ * @param {string} requestedSource - 原始请求的音源
+ */
+function handleApiError(ctx, error, requestedSource = API_CONFIG.defaultSource) {
+    console.error(`${ctx.path} 请求失败 (源: ${requestedSource}):`, error.message);
+    if (error.stack && process.env.NODE_ENV !== 'production') {
+        console.error(error.stack);
+    }
+
+    let statusCode = 500;
+    let message = "服务器内部错误";
+    const sourceText = requestedSource === API_CONFIG.defaultSource ? '默认源' : `'${requestedSource}'`;
+
+    if (error.message === 'API request timed out') {
+        statusCode = 504;
+        message = `请求上游 API (${sourceText}) 超时，请稍后重试。`;
+    } else if (error.message.includes("API request failed")) {
+        const matchStatus = error.message.match(/status (\d+)/);
+        const upstreamStatusCode = matchStatus ? parseInt(matchStatus[1], 10) : 502;
+        statusCode = (upstreamStatusCode >= 100 && upstreamStatusCode <= 599) ? upstreamStatusCode : 502;
+        message = `请求上游源 ${sourceText} 失败 (状态码: ${statusCode})。该源可能暂时不可用，请尝试更换 source 参数或稍后再试。`;
+    }
+
+    ctx.status = statusCode;
+    ctx.body = { code: ctx.status, message: message };
+}
+
+/**
+ * 如果适用，为音乐链接应用代理
+ * @param {string} url - 原始音乐链接
+ * @param {string} [proxyBaseUrl=PROXY_URL_ENV] - 代理服务器基础 URL
+ * @returns {string | null} - 代理后的 URL，如果应用了代理；否则返回 null
+ */
+function generateProxyUrl(url, proxyBaseUrl = PROXY_URL_ENV) {
+    if (proxyBaseUrl && url && (url.includes("kuwo.cn") || url.includes("kugou.com"))) {
+        const protocol = url.startsWith('https://') ? 'https://' : 'http://';
+        const urlWithoutProtocol = url.substring(protocol.length);
+        return `${proxyBaseUrl.replace(/\/$/, '')}/${protocol}${urlWithoutProtocol}`;
+    }
+    return null;
+}
+
+/**
+ * 执行 API 调用，并在失败时尝试回退到备用音源
+ * @param {object} ctx - Koa 上下文
+ * @param {object} initialApiParams - 首次尝试的 API 参数 (包含 types, source, id/name 等)
+ * @param {function} processDataFn - 处理 API 返回数据的函数 (apiResult, source, queryParams) => processedData
+ * @param {object} originalQueryParams - 原始的 ctx.request.query, 用于 processDataFn
+ * @param {boolean} [applyProxy=false] - 是否为结果中的 url 应用代理逻辑
+ */
+async function performApiCallWithFallback(ctx, initialApiParams, processDataFn, originalQueryParams, applyProxy = false) {
+    const originalSource = initialApiParams.source;
+    try {
+        const result = await fetchApiData(initialApiParams);
+        let responseData = processDataFn(result, originalSource, originalQueryParams);
+
+        if (applyProxy && responseData.url) {
+            const proxiedUrl = generateProxyUrl(responseData.url);
+            if (proxiedUrl) responseData.proxyUrl = proxiedUrl;
+        }
+        ctx.body = { code: 200, message: `请求成功 (源: ${originalSource})`, data: responseData };
+    } catch (error) {
+        if ((error.message.includes("API request failed") || error.message === 'API request timed out') &&
+            originalSource !== API_CONFIG.fallbackSource) {
+            console.warn(`源 '${originalSource}' (API 类型: ${initialApiParams.types}) 请求失败. 尝试回退至 '${API_CONFIG.fallbackSource}'...`);
+            try {
+                const fallbackApiParams = { ...initialApiParams, source: API_CONFIG.fallbackSource };
+                const fallbackResult = await fetchApiData(fallbackApiParams);
+                let responseData = processDataFn(fallbackResult, API_CONFIG.fallbackSource, originalQueryParams);
+
+                if (applyProxy && responseData.url) {
+                    const proxiedUrl = generateProxyUrl(responseData.url);
+                    if (proxiedUrl) responseData.proxyUrl = proxiedUrl;
+                }
+                console.log(`API 类型 '${initialApiParams.types}' 从 '${API_CONFIG.fallbackSource}' 回退成功. ID/Name: ${initialApiParams.id || initialApiParams.name || 'N/A'}`);
+                ctx.body = { code: 200, message: `请求成功 (已从 ${originalSource} 回退至 ${API_CONFIG.fallbackSource} 源)`, data: responseData };
+            } catch (fallbackError) {
+                console.error(`回退至 '${API_CONFIG.fallbackSource}' (API 类型: ${initialApiParams.types}) 尝试失败:`, fallbackError.message);
+                handleApiError(ctx, error, originalSource); // 传递原始错误
+            }
+        } else {
+            handleApiError(ctx, error, originalSource);
+        }
+    }
+}
+
+// --- 参数校验工具 ---
+function validateApiSource(ctx, sourceFromQuery) {
+    if (sourceFromQuery && !API_CONFIG.validSources.includes(sourceFromQuery)) {
+        ctx.status = 400;
+        ctx.body = {
+            code: 400, message: "无效的音源参数 source",
+            details: `您提供的音源 '${sourceFromQuery}' 不被支持。`, allowed_sources: API_CONFIG.validSources
+        };
+        return false;
+    }
+    return true;
+}
+
+function validateRequiredParam(ctx, value, paramName, idAlias = paramName) {
+    if (!value) {
+        ctx.status = 400;
+        ctx.body = { code: 400, message: `缺少必要参数 ${idAlias}` };
+        return false;
+    }
+    return true;
+}
+
+function validateEnumParam(ctx, value, paramName, allowedValues) {
+    if (value && !allowedValues.includes(String(value))) { // Ensure value is string for comparison if needed
+        ctx.status = 400;
+        ctx.body = { code: 400, message: `无效参数 ${paramName}: '${value}'`, allowed_values: allowedValues };
+        return false;
+    }
+    return true;
+}
+
+function validatePositiveIntParam(ctx, value, paramName) {
+    const num = parseInt(value, 10);
+    if (isNaN(num) || num <= 0) {
+        ctx.status = 400;
+        ctx.body = { code: 400, message: `参数 ${paramName} ('${value}') 必须是正整数` };
+        return false;
+    }
+    return true;
+}
+
+
+// --- Router 实例 ---
 const router = new Router();
 
-// 定义外部 GDStudio API 的基础 URL 常量
-const API_BASE_URL = "https://music-api.gdstudio.xyz/api.php";
-
-// 定义 GDStudio API 支持的有效音源列表 (基于 2025-4-26 文档)
-const VALID_GDSTUDIO_API_SOURCES = [
-  'netease', 'tencent', 'tidal', 'spotify', 'ytmusic', 
-  'qobuz', 'joox', 'deezer', 'migu', 'kugou', 'kuwo', 'ximalaya'
-];
-// 定义 GDStudio API 默认音源
-const DEFAULT_GDSTUDIO_API_SOURCE = 'netease'; // API 文档指定 'netease' 为默认
-
-// 定义一个异步辅助函数，用于调用 GDStudio API
-async function fetchApiData(params) {
-  // 基于基础 URL 创建一个新的 URL 对象
-  const apiUrl = new URL(API_BASE_URL);
-  // 遍历传入的参数对象
-  Object.entries(params).forEach(([key, value]) => {
-    // 如果参数值不是 undefined 或 null
-    if (value !== undefined && value !== null) {
-      // 将参数键值对追加到 URL 的查询字符串中
-      apiUrl.searchParams.append(key, value);
-    }
-  });
-
-  // 添加超时控制：创建一个 AbortController 实例
-  const controller = new AbortController();
-  // 设置一个 10 秒的定时器，超时后调用 abort 方法
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-  // 使用 try...catch 块处理可能的错误
-  try {
-    // 记录将要请求的上游 API URL
-    console.log(`Fetching from upstream API: ${apiUrl.toString()}`);
-    // 使用 fetch 发起网络请求，传入 URL 和 AbortSignal
-    const response = await fetch(apiUrl.toString(), { signal: controller.signal });
-    // 如果请求成功完成（未超时），清除之前设置的超时定时器
-    clearTimeout(timeoutId);
-
-    // 检查响应状态码是否表示成功 (status code 200-299)
-    if (!response.ok) {
-      // 如果响应不成功，记录详细的警告信息
-      console.warn(
-        `Upstream API request failed! URL: ${apiUrl.toString()}, Status: ${response.status}, StatusText: ${response.statusText}`
-      );
-      // 初始化错误响应体变量
-      let errorBody = null;
-      // 尝试读取响应体
-      try {
-        // 首先尝试将响应体作为文本读取
-        const textBody = await response.text();
-        // 记录原始文本响应体
-        console.warn(`Upstream API response body (text): ${textBody}`);
-        // 尝试将文本解析为 JSON
-        errorBody = JSON.parse(textBody);
-      } catch (e) {
-        // 如果解析 JSON 失败，记录警告
-        console.warn(`Failed to parse upstream API response body as JSON: ${e.message}`);
-        // 保留 errorBody 为 null 或根据需要使用 textBody
-      }
-      // 抛出一个包含原始状态码和响应信息的错误
-      throw new Error(
-        `API request failed with status ${response.status}. Response: ${JSON.stringify(errorBody) || response.statusText}`
-      );
-    }
-    // 如果响应成功，将响应体解析为 JSON
-    const result = await response.json();
-    // 返回解析后的 JSON 结果
-    return result;
-  } catch (error) {
-    // 确保在出错时也清除超时定时器
-    clearTimeout(timeoutId);
-    // 检查错误是否是由于超时引起的 (AbortError)
-    if (error.name === 'AbortError') {
-      // 如果是超时错误，记录错误信息
-      console.error(`Upstream API request timed out: ${apiUrl.toString()}`);
-      // 抛出一个特定的超时错误
-      throw new Error('API request timed out');
-    }
-    // 记录捕获到的其他错误（可能是 fetch 错误或上面手动抛出的错误）
-    console.error(`Error during fetchApiData for [${apiUrl.toString()}]:`, error);
-    // 重新抛出原始错误或包装后的错误
-    throw error;
-  }
-}
-
-// 定义一个辅助函数，用于标准化处理路由中的 API 错误
-function handleApiError(ctx, error, requestedSource = 'default') {
-  // 在服务器端记录完整的错误信息和请求路径
-  console.error(`${ctx.path} 请求失败 (源: ${requestedSource}):`, error.message); // Log specific error message
-
-  // 初始化默认的状态码和错误消息
-  let statusCode = 500;
-  let message = "服务器内部错误";
-  // 根据请求的源生成用于错误消息的文本
-  const sourceText = requestedSource === 'default' || requestedSource === DEFAULT_GDSTUDIO_API_SOURCE ? '默认源' : `'${requestedSource}'`;
-
-  // 检查错误消息是否表示请求超时
-  if (error.message === 'API request timed out') {
-    // 如果是超时，设置状态码为 504 (Gateway Timeout)
-    statusCode = 504;
-    // 设置相应的错误消息
-    message = `请求上游 API (${sourceText}) 超时，请稍后重试。`;
-    // 检查错误消息是否表示上游 API 请求失败
-  } else if (error.message.includes("API request failed")) {
-    // 尝试从错误消息中提取原始的上游状态码
-    const matchStatus = error.message.match(/status (\d+)/);
-    // 如果提取到状态码，则解析为整数，否则默认为 502
-    const upstreamStatusCode = matchStatus ? parseInt(matchStatus[1], 10) : 502;
-    // 确保提取到的状态码是有效的 HTTP 状态码 (100-599)，否则默认为 502
-    statusCode = (upstreamStatusCode >= 100 && upstreamStatusCode <= 599) ? upstreamStatusCode : 502;
-    // 设置包含源信息和状态码的具体错误消息
-    message = `请求上游源 ${sourceText} 失败 (状态码: ${statusCode})。该源可能暂时不可用，请尝试更换 source 参数或稍后再试。`;
-  }
-  // 对于其他类型的内部错误，保持 statusCode 为 500
-
-  // 设置 Koa 上下文的响应状态码
-  ctx.status = statusCode;
-  // 设置 Koa 上下文的响应体，包含状态码和错误消息
-  ctx.body = {
-    code: ctx.status,
-    message: message,
-  };
-}
-
-// 定义根路由 ("/") 的 GET 请求处理
+// --- 基础路由 ---
 router.get("/", async (ctx) => {
-  // 使用 koa-views 渲染名为 "index" 的视图（通常是 public/index.html）
-  await ctx.render("index");
+    await ctx.render("index"); // 确保 koa-views 正确配置
 });
 
-// 定义 "/info" 路由的 GET 请求处理
 router.get("/info", async (ctx) => {
-  // 设置响应体，包含固定的成功代码、项目版本和 FLAC 启用状态
-  ctx.body = {
-    code: 200, // HTTP 状态码
-    version: packageJson.version, // 从 package.json 获取的版本号
-    // 从环境变量读取 ENABLE_FLAC，并确保转换为布尔值
-    enable_flac: process.env.ENABLE_FLAC === 'true',
-  }
+    ctx.body = {
+        code: 200,
+        version: packageJson.version,
+        enable_flac: process.env.ENABLE_FLAC === 'true',
+        gd_api_default_source: API_CONFIG.defaultSource,
+        gd_api_fallback_source: API_CONFIG.fallbackSource,
+        gd_api_valid_sources: API_CONFIG.validSources,
+    };
 });
 
-// 定义 "/test" 路由的 GET 请求处理 (用于测试 unblockneteasemusic 核心功能)
-// 注意: 此处的音源列表是 @unblockneteasemusic/server 特有的，
-// 与 GDStudio API 的 source 参数无关，故根据用户提供的 API 文档不作修改。
+// --- @unblockneteasemusic/server 相关路由 ---
 router.get("/test", async (ctx) => {
-  // 使用 @unblockneteasemusic/server 的 match 函数测试特定歌曲 ID (416892104)
-  // 注意：如果 match 函数需要 cookies 或 keys，应从环境变量中读取并传入
-  const data = await match(416892104, [ // 指定要尝试匹配的音源列表
-    "pyncmd", "kuwo", "bilibili", "migu", "kugou", "qq", "youtube", "youtube-dl", "yt-dlp"
-  ]).then((res) => { // match 函数返回一个 Promise
-    return res; // 返回匹配结果
-  });
-  // 设置响应体，包含成功代码、消息和获取到的数据
-  ctx.body = {
-    code: 200,
-    message: "获取成功",
-    data, // 包含匹配到的 URL 等信息
-  };
-});
-
-// 定义 "/match" 路由的 GET 请求处理 (由 @unblockneteasemusic/server 处理)
-// 注意: 此处的 server 参数音源列表是 @unblockneteasemusic/server 特有的，
-// 与 GDStudio API 的 source 参数无关，故根据用户提供的 API 文档不作修改。
-router.get("/match", async (ctx) => {
-  // 使用 try...catch 处理可能的错误
-  try {
-    // 从查询参数中获取歌曲 ID
-    const id = ctx.request.query.id;
-    // 从查询参数中获取音源列表（逗号分隔），如果没有提供则使用默认列表
-    // 注意：此处的 server 列表是给 @unblockneteasemusic/server 用的，与 GDStudio API 的 source 不同
-    const server = ctx.request.query.server
-      ? ctx.request.query.server.split(",")
-      : ["pyncmd", "kuwo", "bilibili", "migu", "kugou", "qq", "youtube", "youtube-dl", "yt-dlp"];
-    // 记录匹配请求信息（考虑在生产环境中减少日志）
-    console.log("开始匹配：" + id + " - " + server.join(','));
-    // 验证 ID 是否存在
-    if (!id) {
-      // 如果缺少 ID，返回 400 错误
-      ctx.body = { code: 400, message: "参数不完整" };
-      ctx.status = 400;
-      return; // 提前返回
-    }
-    // 调用 @unblockneteasemusic/server 的 match 函数进行匹配
-    // 注意：如果需要 cookies/keys，需配置到 @unblockneteasemusic/server 或通过环境变量传递
-    const data = await match(id, server).then((res) => {
-      return res; // 返回匹配结果
-    });
-    // 从环境变量读取代理 URL
-    const proxy = process.env.PROXY_URL;
-    // 如果配置了代理 URL 且匹配到的 URL 存在且包含 "kuwo" (按原逻辑)
-    if (proxy && data.url && data.url.includes("kuwo")) {
-      // 生成代理后的 URL
-      data.proxyUrl = proxy + data.url.replace(/^http:\/\//, "http/"); // Ensuring "http/" for consistency
-    }
-    // 设置成功响应体
-    ctx.body = {
-      code: 200,
-      message: "匹配成功",
-      data,
-    };
-  } catch (error) {
-    // 如果匹配过程中发生错误，记录完整错误
-    console.error("匹配出现错误：", error);
-    // 设置 500 内部服务器错误状态
-    ctx.status = 500;
-    // 返回通用的失败消息给客户端
-    ctx.body = {
-      code: 500,
-      message: "匹配失败",
-    };
-  }
-});
-
-/* 网易云音乐获取 (使用 GDStudio API)
-十分感谢自GDStudio的音源API, 这里贴个链接: music.gdstudio.xyz
-*/
-// 定义 "/url" 路由的 GET 请求处理 (获取歌曲播放链接)
-router.get("/url", async (ctx) => {
-  const sourceFromQuery = ctx.request.query.source;
-  if (sourceFromQuery && !VALID_GDSTUDIO_API_SOURCES.includes(sourceFromQuery)) {
-    ctx.status = 400;
-    ctx.body = { 
-      code: 400, 
-      message: "无效的音源参数 source",
-      details: `您提供的音源 '${sourceFromQuery}' 不被支持。`,
-      allowed_sources: VALID_GDSTUDIO_API_SOURCES 
-    };
-    return;
-  }
-
-  // 解构参数，source 使用已验证的 sourceFromQuery 或默认值
-  const { id, br = '999' } = ctx.request.query;
-  const source = sourceFromQuery || DEFAULT_GDSTUDIO_API_SOURCE;
-  // 保存原始请求的 source (经过验证或默认的)，用于错误处理和回退逻辑判断
-  const originalSource = source; // originalSource is now the validated or default source
-
-  // 使用 try...catch 处理可能的错误
-  try {
-    // 1. 参数验证：检查 id 是否存在
-    if (!id) {
-      ctx.status = 400; // 设置 400 Bad Request 状态码
-      ctx.body = { code: 400, message: "缺少必要参数 id" }; // 设置响应体
-      return; // 提前返回
-    }
-
-    // 1. 参数验证：检查 br (音质) 是否有效
-    const validBR = ["128", "192", "320", "740", "999"]; // 定义有效的音质选项
-    if (!validBR.includes(br)) { // 如果请求的 br 不在有效列表中
-      ctx.status = 400; // 设置 400 Bad Request 状态码
-      ctx.body = { // 设置包含错误信息和允许值的响应体
-        code: 400,
-        message: "无效音质参数 br",
-        allowed_values: validBR
-      };
-      return; // 提前返回
-    }
-
-    // 2. 准备调用 API 的参数
-    const params = { types: "url", id, source: originalSource, br }; // 使用原始请求的 source 进行首次尝试
-    // 调用 fetchApiData 函数请求外部 API
-    const result = await fetchApiData(params);
-
-    // 3. 处理成功的 API 响应结果
-    let responseData = {
-      id: result.id || id, // 如果 API 未返回 id，则使用请求的 id
-      source: originalSource, // 默认反映首次尝试成功的源
-      br: result.br,       // API 返回的实际音质
-      size: result.size,     // 文件大小
-      url: result.url,       // 音乐链接
-    };
-
-    // 3. 处理代理逻辑
-    // 从环境变量读取代理 URL
-    const proxy = process.env.PROXY_URL;
-    // 如果代理 URL 存在，且 API 返回的 URL 存在，且 URL 包含 "kuwo.cn" (基于原逻辑的特定判断)
-    if (proxy && result.url && result.url.includes("kuwo.cn")) {
-      // 构造代理 URL，确保协议正确拼接
-      const protocol = result.url.startsWith('https://') ? 'https://' : 'http://'; // 判断原始 URL 协议
-      const urlWithoutProtocol = result.url.substring(protocol.length); // 去掉协议部分
-      // 安全地拼接代理 URL，移除代理地址末尾的斜杠（如果有）
-      responseData.proxyUrl = `${proxy.replace(/\/$/, '')}/${protocol}${urlWithoutProtocol}`;
-    }
-
-    // 设置 Koa 的成功响应体
-    ctx.body = {
-      code: 200,
-      message: "请求成功",
-      data: responseData
-    };
-
-  } catch (error) {
-    // 捕获到错误（可能是参数验证错误、fetchApiData 错误或后续处理错误）
-    // 检查错误是否是上游 API 错误 (基于错误消息判断) 且原始请求的源不是 'kugou' (避免无限回退)
-    const FALLBACK_SOURCE = 'kugou'; // Fallback source is kugou
-    if ((error.message.includes("API request failed") || error.message === 'API request timed out') && originalSource !== FALLBACK_SOURCE) {
-      // 如果满足回退条件，记录警告信息
-      console.warn(`Upstream request for source '${originalSource}' failed. Attempting fallback to '${FALLBACK_SOURCE}'.`);
-      // 使用嵌套的 try...catch 尝试回退逻辑
-      try {
-        // 准备回退请求的参数，将 source 设置为 'kugou'
-        const fallbackParams = { types: "url", id, source: FALLBACK_SOURCE, br };
-        // 调用 fetchApiData 尝试请求 'kugou' 源
-        const fallbackResult = await fetchApiData(fallbackParams);
-
-        // 如果回退请求成功
-        // 准备回退成功的响应数据
-        let responseData = {
-          id: fallbackResult.id || id, // 使用 API 返回的 id 或请求的 id
-          source: FALLBACK_SOURCE, // 明确指出数据来自 'kugou' 源
-          br: fallbackResult.br,       // 回退结果的音质
-          size: fallbackResult.size,     // 回退结果的大小
-          url: fallbackResult.url,       // 回退结果的 URL
-        };
-        // 从环境变量获取代理 URL
-        const proxy = process.env.PROXY_URL;
-        // 对回退得到的 URL 应用代理逻辑 (假设酷我或酷狗的链接可能需要代理)
-        if (proxy && fallbackResult.url && (fallbackResult.url.includes("kuwo.cn") || fallbackResult.url.includes("kugou.com"))) {
-          const protocol = fallbackResult.url.startsWith('https') ? 'https://' : 'http://';
-          const urlWithoutProtocol = fallbackResult.url.substring(protocol.length);
-          responseData.proxyUrl = `${proxy.replace(/\/$/, '')}/${protocol}${urlWithoutProtocol}`;
-        }
-        // 记录回退成功的日志
-        console.log(`Fallback to '${FALLBACK_SOURCE}' succeeded for id ${id}.`);
-        // 设置成功的响应体，消息中注明是回退成功
-        ctx.body = { code: 200, message: `请求成功 (回退至 ${FALLBACK_SOURCE} 源)`, data: responseData };
-        // 成功回退后，必须返回，结束请求处理
-        return;
-
-      } catch (fallbackError) {
-        // 如果回退尝试也失败了，记录错误
-        console.error(`Fallback attempt to '${FALLBACK_SOURCE}' also failed:`, fallbackError);
-        // 调用 handleApiError 处理 *最初* 的那个错误，并告知原始请求的源
-        handleApiError(ctx, error, originalSource);
-      }
-    } else {
-      // 如果错误不是上游 API 错误，或者原始请求的源已经是 'kugou'，
-      // 则直接调用 handleApiError 处理当前捕获到的错误，并告知原始请求的源
-      handleApiError(ctx, error, originalSource);
-    }
-  }
-});
-
-// 定义 "/search" 路由的 GET 请求处理 (搜索音乐)
-router.get("/search", async (ctx) => {
-  const sourceFromQuery = ctx.request.query.source;
-  if (sourceFromQuery && !VALID_GDSTUDIO_API_SOURCES.includes(sourceFromQuery)) {
-    ctx.status = 400;
-    ctx.body = { 
-      code: 400, 
-      message: "无效的音源参数 source",
-      details: `您提供的音源 '${sourceFromQuery}' 不被支持。`,
-      allowed_sources: VALID_GDSTUDIO_API_SOURCES 
-    };
-    return;
-  }
-  
-  // 从查询参数解构，设置默认值
-  const { name, count = '20', pages = '1' } = ctx.request.query;
-  const source = sourceFromQuery || DEFAULT_GDSTUDIO_API_SOURCE;
-  // 保存原始请求的 source
-  const originalSource = source;
-
-  // 使用 try...catch 处理可能的错误
-  try {
-    // 1. 参数验证：检查 name 是否存在
-    if (!name) {
-      ctx.status = 400;
-      ctx.body = { code: 400, message: "缺少必要参数 name" };
-      return;
-    }
-    // 1. 参数验证：检查 count 和 pages 是否是正整数
-    if (isNaN(parseInt(count)) || isNaN(parseInt(pages)) || parseInt(count) <= 0 || parseInt(pages) <= 0) {
-      ctx.status = 400;
-      ctx.body = { code: 400, message: "参数 count 和 pages 必须是正整数" };
-      return;
-    }
-
-    // 2. 调用 API
-    const params = { types: "search", name, source: originalSource, count, pages }; // 使用原始 source 首次尝试
-    const results = await fetchApiData(params);
-    // 处理成功结果，确保每个结果项都包含原始请求的 source 字段
-    const processedResults = results.map(item => ({ ...item, source: originalSource }));
-    // 设置成功响应体
-    ctx.body = { code: 200, message: "搜索成功", data: processedResults };
-
-  } catch (error) {
-    const FALLBACK_SOURCE = 'kugou';
-    // 捕获错误，检查是否满足回退条件
-    if ((error.message.includes("API request failed") || error.message === 'API request timed out') && originalSource !== FALLBACK_SOURCE) {
-      // 记录尝试回退的日志
-      console.warn(`Upstream request for source '${originalSource}' failed. Attempting fallback to '${FALLBACK_SOURCE}'.`);
-      // 使用嵌套 try...catch 尝试回退
-      try {
-        // 准备回退参数，设置 source 为 'kugou'
-        const fallbackParams = { types: "search", name, source: FALLBACK_SOURCE, count, pages };
-        // 调用 API 尝试回退
-        const fallbackResults = await fetchApiData(fallbackParams);
-        // 处理回退成功的结果，确保每个结果项的 source 字段为 'kugou'
-        const processedResults = fallbackResults.map(item => ({ ...item, source: FALLBACK_SOURCE }));
-        // 记录回退成功的日志
-        console.log(`Fallback to '${FALLBACK_SOURCE}' succeeded for search '${name}'.`);
-        // 设置成功响应体，消息中注明是回退成功
-        ctx.body = { code: 200, message: `搜索成功 (回退至 ${FALLBACK_SOURCE} 源)`, data: processedResults };
-        // 成功回退后返回
-        return;
-      } catch (fallbackError) {
-        // 如果回退尝试失败，记录错误
-        console.error(`Fallback attempt to '${FALLBACK_SOURCE}' also failed:`, fallbackError);
-        // 调用 handleApiError 处理原始错误
-        handleApiError(ctx, error, originalSource);
-      }
-    } else {
-      // 不满足回退条件，直接处理原始错误
-      handleApiError(ctx, error, originalSource);
-    }
-  }
-});
-
-// 定义 "/pic" 路由的 GET 请求处理 (获取专辑图)
-router.get("/pic", async (ctx) => {
-  const sourceFromQuery = ctx.request.query.source;
-  if (sourceFromQuery && !VALID_GDSTUDIO_API_SOURCES.includes(sourceFromQuery)) {
-    ctx.status = 400;
-    ctx.body = { 
-      code: 400, 
-      message: "无效的音源参数 source",
-      details: `您提供的音源 '${sourceFromQuery}' 不被支持。`,
-      allowed_sources: VALID_GDSTUDIO_API_SOURCES 
-    };
-    return;
-  }
-  
-  // 从查询参数解构，设置默认值
-  const { id, size = '300' } = ctx.request.query;
-  const source = sourceFromQuery || DEFAULT_GDSTUDIO_API_SOURCE;
-  // 保存原始请求的 source
-  const originalSource = source;
-
-  // 使用 try...catch 处理可能的错误
-  try {
-    // 1. 参数验证：检查 id 是否存在
-    if (!id) {
-      ctx.status = 400;
-      ctx.body = { code: 400, message: "缺少必要参数 id (pic_id)" };
-      return;
-    }
-    // 1. 参数验证：检查 size 是否有效
-    const validSizes = ["300", "500"];
-    if (!validSizes.includes(size)) {
-      ctx.status = 400;
-      ctx.body = { code: 400, message: "无效图片尺寸参数 size", allowed_values: validSizes };
-      return;
-    }
-
-    // 2. 调用 API
-    const params = { types: "pic", id, source: originalSource, size }; // 使用原始 source 首次尝试
-    const result = await fetchApiData(params);
-    // 处理成功结果，添加原始请求的 source 字段（API 本身可能不返回 source）
-    const responseData = { ...result, source: originalSource };
-    // 设置成功响应体
-    ctx.body = { code: 200, message: "请求成功", data: responseData };
-
-  } catch (error) {
-    const FALLBACK_SOURCE = 'kugou';
-    // 捕获错误，检查是否满足回退条件
-    if ((error.message.includes("API request failed") || error.message === 'API request timed out') && originalSource !== FALLBACK_SOURCE) {
-      // 记录尝试回退的日志
-      console.warn(`Upstream request for source '${originalSource}' failed. Attempting fallback to '${FALLBACK_SOURCE}'.`);
-      // 使用嵌套 try...catch 尝试回退
-      try {
-        // 准备回退参数，设置 source 为 'kugou'
-        const fallbackParams = { types: "pic", id, source: FALLBACK_SOURCE, size };
-        // 调用 API 尝试回退
-        const fallbackResult = await fetchApiData(fallbackParams);
-        // 处理回退成功的结果，将 source 字段设为 'kugou'
-        const responseData = { ...fallbackResult, source: FALLBACK_SOURCE };
-        // 记录回退成功的日志
-        console.log(`Fallback to '${FALLBACK_SOURCE}' succeeded for pic id ${id}.`);
-        // 设置成功响应体，消息中注明是回退成功
-        ctx.body = { code: 200, message: `请求成功 (回退至 ${FALLBACK_SOURCE} 源)`, data: responseData };
-        // 成功回退后返回
-        return;
-      } catch (fallbackError) {
-        // 如果回退尝试失败，记录错误
-        console.error(`Fallback attempt to '${FALLBACK_SOURCE}' also failed:`, fallbackError);
-        // 调用 handleApiError 处理原始错误
-        handleApiError(ctx, error, originalSource);
-      }
-    } else {
-      // 不满足回退条件，直接处理原始错误
-      handleApiError(ctx, error, originalSource);
-    }
-  }
-});
-
-// 定义 "/lyric" 路由的 GET 请求处理 (获取歌词)
-router.get("/lyric", async (ctx) => {
-  const sourceFromQuery = ctx.request.query.source;
-  if (sourceFromQuery && !VALID_GDSTUDIO_API_SOURCES.includes(sourceFromQuery)) {
-    ctx.status = 400;
-    ctx.body = { 
-      code: 400, 
-      message: "无效的音源参数 source",
-      details: `您提供的音源 '${sourceFromQuery}' 不被支持。`,
-      allowed_sources: VALID_GDSTUDIO_API_SOURCES 
-    };
-    return;
-  }
-
-  // 从查询参数解构，设置默认 source
-  const { id } = ctx.request.query;
-  const source = sourceFromQuery || DEFAULT_GDSTUDIO_API_SOURCE;
-  // 保存原始请求的 source
-  const originalSource = source;
-
-  // 使用 try...catch 处理可能的错误
-  try {
-    // 1. 参数验证：检查 id 是否存在
-    if (!id) {
-      ctx.status = 400;
-      ctx.body = { code: 400, message: "缺少必要参数 id (lyric_id)" };
-      return;
-    }
-
-    // 2. 调用 API
-    const params = { types: "lyric", id, source: originalSource }; // 使用原始 source 首次尝试
-    const result = await fetchApiData(params);
-    // 处理成功结果，添加原始请求的 source 字段
-    const responseData = { ...result, source: originalSource };
-    // 设置成功响应体
-    ctx.body = { code: 200, message: "请求成功", data: responseData };
-
-  } catch (error) {
-    const FALLBACK_SOURCE = 'kugou';
-    // 捕获错误，检查是否满足回退条件
-    if ((error.message.includes("API request failed") || error.message === 'API request timed out') && originalSource !== FALLBACK_SOURCE) {
-      // 记录尝试回退的日志
-      console.warn(`Upstream request for source '${originalSource}' failed. Attempting fallback to '${FALLBACK_SOURCE}'.`);
-      // 使用嵌套 try...catch 尝试回退
-      try {
-        // 准备回退参数，设置 source 为 'kugou'
-        const fallbackParams = { types: "lyric", id, source: FALLBACK_SOURCE };
-        // 调用 API 尝试回退
-        const fallbackResult = await fetchApiData(fallbackParams);
-        // 处理回退成功的结果，将 source 字段设为 'kugou'
-        const responseData = { ...fallbackResult, source: FALLBACK_SOURCE };
-        // 记录回退成功的日志
-        console.log(`Fallback to '${FALLBACK_SOURCE}' succeeded for lyric id ${id}.`);
-        // 设置成功响应体，消息中注明是回退成功
-        ctx.body = { code: 200, message: `请求成功 (回退至 ${FALLBACK_SOURCE} 源)`, data: responseData };
-        // 成功回退后返回
-        return;
-      } catch (fallbackError) {
-        // 如果回退尝试失败，记录错误
-        console.error(`Fallback attempt to '${FALLBACK_SOURCE}' also failed:`, fallbackError);
-        // 调用 handleApiError 处理原始错误
-        handleApiError(ctx, error, originalSource);
-      }
-    } else {
-      // 不满足回退条件，直接处理原始错误
-      handleApiError(ctx, error, originalSource);
-    }
-  }
-});
-
-// 定义 404 中间件，处理未匹配的路由
-router.use(async (ctx) => {
-  // 如果 vercel.json 配置了静态 404 路由，这个中间件可能不会被 Vercel 环境调用
-  // 保留此逻辑以处理 Koa 内部未匹配的路径，或用于本地开发
-
-  // 设置 HTTP 状态码为 404 Not Found
-  ctx.status = 404;
-  // 检查客户端接受的内容类型
-  if (ctx.accepts('html')) { // 如果客户端期望 HTML
-    // 渲染名为 "404" 的视图 (需要 public/404.html 和 koa-views 配置)
-    // Make sure koa-views is configured if you expect this to work
+    console.log(`[${new Date().toISOString()}] /test route started for ID ${UNM_API_CONFIG.testSongId}`);
+    const sourcesToTry = UNM_API_CONFIG.defaultSources; // Using the same default list as /match for consistency based on user code
+    console.log(`[${new Date().toISOString()}] Attempting to match with @unblockneteasemusic/server sources: ${sourcesToTry.join(', ')}`);
+    const startTime = Date.now();
     try {
-      await ctx.render("404");
-    } catch (renderError) {
-        console.error("Failed to render 404 page, falling back to JSON response:", renderError);
-        ctx.body = { code: 404, message: 'Not Found (HTML render failed)' };
-        ctx.type = 'json'; // Explicitly set type if render fails
+        const data = await match(UNM_API_CONFIG.testSongId, sourcesToTry);
+        const duration = Date.now() - startTime;
+        console.log(`[${new Date().toISOString()}] @unblockneteasemusic/server match() completed in ${duration}ms.`);
+        ctx.body = { code: 200, message: "获取成功 (@unblockneteasemusic/server)", data };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        console.error(`[${new Date().toISOString()}] Error in /test route for @unblockneteasemusic/server after ${duration}ms:`, error);
+        ctx.status = 500;
+        ctx.body = { code: 500, message: "(@unblockneteasemusic/server) 测试接口处理失败", error: error.message };
     }
-  } else { // 如果客户端期望其他类型（如 JSON）
-    // 返回 JSON 格式的 404 错误信息
-    ctx.body = { code: 404, message: 'Not Found' };
-  }
 });
 
-// 导出配置好的 router 实例，供主应用 (index.js) 使用
+router.get("/match", async (ctx) => {
+    try {
+        const id = ctx.request.query.id;
+        if (!validateRequiredParam(ctx, id, 'id')) return;
+
+        const serverSources = ctx.request.query.server
+            ? ctx.request.query.server.split(",")
+            : UNM_API_CONFIG.defaultSources;
+
+        console.log(`@unblockneteasemusic/server: 开始匹配 ID '${id}' 使用源: ${serverSources.join(',')}`);
+        const data = await match(id, serverSources);
+
+        if (PROXY_URL_ENV && data.url && data.url.includes("kuwo")) { // 原有代理逻辑
+            data.proxyUrl = PROXY_URL_ENV + data.url.replace(/^http:\/\//, "http/");
+        }
+        ctx.body = { code: 200, message: "匹配成功 (@unblockneteasemusic/server)", data };
+    } catch (error) {
+        console.error("@unblockneteasemusic/server 匹配出现错误:", error);
+        ctx.status = 500;
+        ctx.body = { code: 500, message: "(@unblockneteasemusic/server) 匹配失败" };
+    }
+});
+
+// --- GDStudio API 路由 ---
+
+// 获取歌曲播放链接
+router.get("/url", async (ctx) => {
+    if (!validateApiSource(ctx, ctx.request.query.source)) return;
+
+    const { id, br = '999' } = ctx.request.query; // br 默认 '999'
+    const source = ctx.request.query.source || API_CONFIG.defaultSource;
+
+    if (!validateRequiredParam(ctx, id, 'id')) return;
+    if (!validateEnumParam(ctx, br, 'br', ["128", "192", "320", "740", "999"])) return;
+
+    const initialApiParams = { types: "url", id, source, br };
+    const processDataFn = (apiResult, currentSource, query) => ({
+        id: apiResult.id || query.id, // 使用原始请求的 id 作为后备
+        source: currentSource,
+        br: apiResult.br,
+        size: apiResult.size,
+        url: apiResult.url,
+    });
+
+    await performApiCallWithFallback(ctx, initialApiParams, processDataFn, ctx.request.query, true);
+});
+
+// 搜索音乐
+router.get("/search", async (ctx) => {
+    if (!validateApiSource(ctx, ctx.request.query.source)) return;
+
+    const { name, count = '20', pages = '1' } = ctx.request.query;
+    const source = ctx.request.query.source || API_CONFIG.defaultSource;
+
+    if (!validateRequiredParam(ctx, name, 'name')) return;
+    if (!validatePositiveIntParam(ctx, count, 'count')) return;
+    if (!validatePositiveIntParam(ctx, pages, 'pages')) return;
+
+    const initialApiParams = { types: "search", name, source, count, pages };
+    const processDataFn = (apiResult, currentSource) => {
+        return Array.isArray(apiResult) ? apiResult.map(item => ({ ...item, source: currentSource })) : [];
+    };
+    
+    await performApiCallWithFallback(ctx, initialApiParams, processDataFn, ctx.request.query, false);
+});
+
+// 获取专辑图
+router.get("/pic", async (ctx) => {
+    if (!validateApiSource(ctx, ctx.request.query.source)) return;
+
+    const { id, size = '300' } = ctx.request.query;
+    const source = ctx.request.query.source || API_CONFIG.defaultSource;
+
+    if (!validateRequiredParam(ctx, id, 'id', 'pic_id')) return;
+    if (!validateEnumParam(ctx, size, 'size', ["300", "500"])) return;
+
+    const initialApiParams = { types: "pic", id, source, size };
+    const processDataFn = (apiResult, currentSource) => ({
+        ...apiResult,
+        source: currentSource, // API 可能不返回 source, 手动添加
+    });
+
+    await performApiCallWithFallback(ctx, initialApiParams, processDataFn, ctx.request.query, false);
+});
+
+// 获取歌词
+router.get("/lyric", async (ctx) => {
+    if (!validateApiSource(ctx, ctx.request.query.source)) return;
+        
+    const { id } = ctx.request.query;
+    const source = ctx.request.query.source || API_CONFIG.defaultSource;
+
+    if (!validateRequiredParam(ctx, id, 'id', 'lyric_id')) return;
+
+    const initialApiParams = { types: "lyric", id, source };
+    const processDataFn = (apiResult, currentSource) => ({
+        ...apiResult,
+        source: currentSource, // API 可能不返回 source, 手动添加
+    });
+
+    await performApiCallWithFallback(ctx, initialApiParams, processDataFn, ctx.request.query, false);
+});
+
+
+// --- 404 处理中间件 ---
+router.use(async (ctx) => {
+    ctx.status = 404;
+    if (ctx.accepts('html')) {
+        try {
+            await ctx.render("404"); // 确保 public/404.html 和 koa-views 配置
+        } catch (renderError) {
+            console.error("渲染 404 HTML 页面失败, 回退到 JSON 响应:", renderError);
+            ctx.type = 'json'; // 明确设置类型
+            ctx.body = { code: 404, message: '资源未找到 (HTML 渲染失败)' };
+        }
+    } else {
+        ctx.body = { code: 404, message: '资源未找到' };
+    }
+});
+
+// 导出配置好的 router 实例
 module.exports = router;
