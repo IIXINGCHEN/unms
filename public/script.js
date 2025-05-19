@@ -5,7 +5,7 @@
 // Theme toggling function
 const toggleDarkMode = (darkModeMediaQuery) => {
     const themeToggle = document.getElementById('themeToggle');
-    if (document.documentElement && themeToggle) { // Check if elements exist
+    if (document.documentElement && themeToggle) { 
         if (darkModeMediaQuery.matches) {
             document.documentElement.classList.add("dark-mode");
             themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
@@ -21,16 +21,14 @@ const socialJump = (type) => {
     let url = '';
     switch (type) {
         case "github":
-            // 请替换为您的 GitHub 项目地址或个人主页
-            url = "https://github.com/imsyy/UNM-Server"; // 示例地址
+            url = "https://github.com/imsyy/UNM-Server-AXC"; // 请替换为您的实际仓库地址
             break;
         case "home":
-            // 请替换为您的项目主页或个人主页
-            url = "https://www.imsyy.top/"; // 示例地址
+            url = "https://www.imsyy.top/"; // 请替换为您的主页
             break;
         case "email":
             window.location.href = "mailto:imsyy@foxmail.com"; // 请替换为您的邮箱
-            return; // mailto:不需要新窗口
+            return; 
         default:
             return;
     }
@@ -53,18 +51,20 @@ function displayLoading(container) {
 // Helper: Display error message
 function displayError(container, message, details = '') {
     if (!container) return;
+    const safeMessage = String(message).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const safeDetails = typeof details === 'string' ? details.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
     container.innerHTML = `
                 <div class="error-message-box">
                     <strong>错误</strong>
-                    <p>${message}</p>
-                    ${details ? `<p><small>${String(details).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</small></p>` : ''}
+                    <p>${safeMessage}</p>
+                    ${details ? `<p><small>${safeDetails}</small></p>` : ''}
                 </div>`;
     container.style.display = 'block';
 }
 
 // Recursive renderer for JSON objects into DL/DT/DD structure
 function renderJsonObject(obj, parentElement) {
-    if (!parentElement || typeof obj !== 'object' || obj === null) return; // Added null check for obj
+    if (!parentElement || typeof obj !== 'object' || obj === null) return;
 
     for (const key in obj) {
         if (Object.hasOwnProperty.call(obj, key)) {
@@ -84,16 +84,8 @@ function renderJsonObject(obj, parentElement) {
                 dd.appendChild(nestedDl);
             } else if (Array.isArray(value)) {
                 const list = document.createElement('ul');
-                list.style.paddingLeft = '1.5rem';
-                list.style.listStyle = 'disc'; // Or 'decimal' for numbered list
-                value.forEach((item, index) => {
+                value.forEach((item) => {
                     const li = document.createElement('li');
-                    // Add a small visual indicator for array index if desired
-                    // const indexSpan = document.createElement('span');
-                    // indexSpan.textContent = `[${index}]: `;
-                    // indexSpan.style.color = 'var(--text-color-gray)';
-                    // li.appendChild(indexSpan);
-
                     if (typeof item === 'object' && item !== null) {
                         const nestedDl = document.createElement('dl');
                         nestedDl.className = 'result-dl nested';
@@ -118,7 +110,7 @@ function renderJsonObject(obj, parentElement) {
 // Helper to format primitive JSON values with appropriate class
 function formatJsonValue(value) {
     const escapeHtml = (unsafe) => {
-        if (typeof unsafe !== 'string') return unsafe; // Only escape strings
+        if (typeof unsafe !== 'string') return unsafe;
         return unsafe
              .replace(/&/g, "&amp;")
              .replace(/</g, "&lt;")
@@ -136,27 +128,22 @@ function formatJsonValue(value) {
     } else if (value === null) {
         return `<span class="json-null">null</span>`;
     } else {
-        return escapeHtml(String(value)); // Fallback for other types
+        return escapeHtml(String(value));
     }
 }
 
 // Updated displayResult function using the recursive renderer
-function displayResult(container, data) {
+function displayResult(container, apiResponse) {
     if (!container) return;
     container.innerHTML = ''; 
     const dl = document.createElement('dl');
     dl.className = 'result-dl';
     try {
-        // Assuming `data` is the full API response { code, message, data: payload }
-        // We want to display the `payload` (which is `data.data`) if the structure is consistent
-        // Or display the whole object if it's an error or a different structure
-        let dataToRender = data;
-        if (data && typeof data.code !== 'undefined' && typeof data.message !== 'undefined') {
-             // Render the standard {code, message, data} structure
-            renderJsonObject(data, dl);
+        if (apiResponse && typeof apiResponse.code !== 'undefined' && typeof apiResponse.message !== 'undefined') {
+            renderJsonObject(apiResponse, dl); 
         } else {
-            // Fallback for unexpected structures, render as is
-            renderJsonObject(data, dl);
+            console.warn("Displaying result with non-standard structure:", apiResponse);
+            renderJsonObject(apiResponse, dl); 
         }
         container.appendChild(dl);
     } catch (e) {
@@ -166,54 +153,59 @@ function displayResult(container, data) {
     container.style.display = 'block';
 }
 
-
-// Button click function (for a general test button if you add one, e.g., to test /info)
-// The original clickFunction was for /test specifically.
-// This is an example for how the /info API could be called by a button on the page.
-const testInfoApi = () => {
+// Test button click function for index.html
+// Эта функция должна быть в глобальной области видимости, чтобы ее можно было вызвать из onclick
+const clickFunction = () => {
     const resultContainer = document.getElementById('test-result-container');
     if (!resultContainer) {
-        console.warn("Result container not found for testInfoApi");
+        console.warn("Result container 'test-result-container' not found for clickFunction.");
+        alert("错误：无法找到用于显示结果的容器。"); // User-facing alert
         return;
     }
 
     displayLoading(resultContainer);
 
-    fetch(window.location.origin + '/info') // Use dynamic origin
+    // API /test 接口是 GET 请求，不需要 body
+    fetch('/test') // 假设 index.html 和 API 服务在同一域名下，所以相对路径 '/test' 可用
         .then(response => {
-            // First, check if response is ok, then try to parse JSON
-            if (!response.ok) {
-                // For non-ok responses, try to get text body for error details
-                const statusText = `${response.status} ${response.statusText}`;
+            // 尝试将所有响应都解析为JSON，因为我们的API应该始终返回JSON
+            return response.json().then(data => {
+                if (response.ok) {
+                    // HTTP 状态码为 2xx
+                    // data 此时应该是 { code, message, data: payload }
+                    displayResult(resultContainer, data);
+                } else {
+                    // HTTP 状态码不是 2xx，但仍然是JSON格式的错误信息
+                    // data 此时应该是 { code, message, data: errorDetails }
+                    const errorMessage = data.message || `请求失败 (状态码: ${response.status})`;
+                    const errorDetailsString = data.data ? JSON.stringify(data.data) : null;
+                    displayError(resultContainer, errorMessage, errorDetailsString);
+                }
+            }).catch(jsonError => {
+                // 如果 response.json() 解析失败 (例如响应体不是有效的JSON)
+                console.error("JSON Parsing Error or Non-JSON response:", jsonError, response);
+                // 尝试读取原始文本响应以提供更多上下文
                 return response.text().then(textData => {
-                    // This Promise will reject, triggering the .catch for networkError or similar
-                    throw new Error(`HTTP error ${statusText} - ${textData || "No details"}`); 
+                    displayError(resultContainer, 
+                        `服务器响应格式错误 (状态码: ${response.status})`, 
+                        `未能解析JSON。原始响应 (部分): ${textData.substring(0, 200)}...`);
                 });
-            }
-            return response.json(); // If ok, parse JSON
+            });
         })
-        .then(data => { // This 'data' is the parsed JSON from a successful response
-            displayResult(resultContainer, data); 
-        })
-        .catch(error => { // Catches network errors and errors thrown from !response.ok
-            console.error("API Call Error:", error);
-            // Attempt to parse error.message if it looks like our API error format
-            // This part is tricky because error.message might not be JSON string.
-            let errorDetails = error.message;
-            try {
-                 // Check if error.message is our structured error (less likely here)
-                 // Or if we should just display the message as is.
-            } catch (e) { /* ignore parsing error of the error message */ }
-            displayError(resultContainer, "API 请求失败", errorDetails);
+        .catch(networkError => {
+            // 网络错误或其他 fetch 本身的错误
+            console.error("Fetch Network Error:", networkError);
+            displayError(resultContainer, "网络请求错误", networkError.message);
         });
 };
+
 
 // Create floating particles
 function createParticles() {
     const particlesContainer = document.getElementById('particles');
     if (!particlesContainer) return;
     const particleCount = 20;
-    particlesContainer.innerHTML = ''; // Clear existing
+    particlesContainer.innerHTML = ''; 
 
     for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
@@ -233,7 +225,7 @@ function createParticles() {
 
 // --- Initialization Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded and parsed for API Docs");
+    console.log("DOM fully loaded and parsed."); // 统一日志消息
     const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const themeToggle = document.getElementById('themeToggle');
 
@@ -260,43 +252,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createParticles();
 
-    // --- Dynamically update domain placeholders in API examples ---
+    // --- Dynamically update domain placeholders in API examples (for api-docs.html) ---
+    // This part is more relevant for api-docs.html. If index.html doesn't have these placeholders, it's fine.
     const currentOrigin = window.location.origin;
 
-    // 1. Update displayed domain text within <span> tags
-    // Example HTML: <code><span class="domain-placeholder">[你的域名]</span>/info</code>
     const textDomainPlaceholders = document.querySelectorAll('span.domain-placeholder');
     textDomainPlaceholders.forEach(span => {
         if (span.textContent.trim() === '[你的域名]') {
             span.textContent = currentOrigin;
-            // Optional: Adjust styling if the placeholder class was for more than just selection
-            span.style.color = 'inherit'; // Or a specific color for the domain part
+            span.style.color = 'inherit';
             span.style.fontStyle = 'normal';
         }
     });
 
-    // 2. Update href attributes of API example links
-    // Example HTML: <a class="api-example-link" href="[你的域名]/info" target="_blank">...</a>
     const apiExampleLinks = document.querySelectorAll('a.api-example-link');
     apiExampleLinks.forEach(link => {
         let href = link.getAttribute('href');
-        if (href && href.includes('[你的域名]')) {
-            link.setAttribute('href', href.replace(/\[你的域名\]/g, currentOrigin));
+        if (href && href.startsWith('[你的域名]')) { 
+            link.setAttribute('href', href.replace('[你的域名]', currentOrigin));
         }
     });
     // --- End of dynamic domain update ---
-
-    // If there's a button on the main page to test an API (e.g., /info or /test)
-    // Example: Give a button an ID "testApiButton" in your main HTML (not docs)
-    // const mainPageTestButton = document.getElementById('testApiButton');
-    // if (mainPageTestButton) {
-    //     mainPageTestButton.addEventListener('click', testInfoApi); // or your original clickFunction for /test
-    // }
     
-    // Update GitHub link dynamically if needed (example)
-    const githubLink = document.getElementById('viewOnGithub');
-    if (githubLink && githubLink.href.includes("your-repo")) { // Check for placeholder
-        githubLink.href = "https://github.com/imsyy/UNM-Server-AXC"; // Replace with actual repo
+    const githubLinkMain = document.getElementById('viewOnGithub'); // Assuming main.html also might have this
+    if (githubLinkMain && githubLinkMain.href.includes("your-repo/unm-server")) { 
+        githubLinkMain.href = "https://github.com/imsyy/UNM-Server-AXC"; 
     }
 
+    // Note: clickFunction is defined globally above, so index.html's onclick="clickFunction()" will find it.
+    // No need to attach event listener for it here if using inline onclick.
 });
