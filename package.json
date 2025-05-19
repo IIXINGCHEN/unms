@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "npx nodemon index.js"
+    "dev": "nodemon index.js"
   },
   "author": "imsyy",
   "license": "MIT",
@@ -14,15 +14,18 @@
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
-    "@unblockneteasemusic/server": "latest",
-    "axios": "^1.8.4",
-    "dotenv": "^16.5.0",
-    "koa": "^2.16.1",
+    "@unblockneteasemusic/server": "^0.31.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "koa": "^2.15.3",
     "koa-bodyparser": "^4.4.1",
     "koa-router": "^12.0.1",
     "koa-static": "^5.0.0",
     "koa-views": "^8.1.0",
     "koa2-cors": "^2.0.6",
-    "nodemon": "^2.0.22"
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
