@@ -8,6 +8,24 @@ const DEFAULT_TTL_SECONDS = parseInt(process.env.CACHE_DEFAULT_TTL_SECONDS, 10) 
 // 从环境变量读取缓存是否启用，默认为启用 (true)。若 CACHE_ENABLED 设置为 'false' 则禁用
 const CACHE_ENABLED = process.env.CACHE_ENABLED !== 'false';
 
+// 不同类型内容的缓存 TTL 配置（秒）
+const TTL_CONFIG = {
+    // 搜索结果缓存时间较短（10分钟）
+    'search': 10 * 60,
+    // 歌曲链接缓存时间中等（1小时）
+    'url': 60 * 60,
+    // 歌词缓存时间较长（6小时）
+    'lyric': 6 * 60 * 60,
+    // 封面图片缓存时间很长（24小时）
+    'pic': 24 * 60 * 60,
+    // 测试结果缓存时间中等（1小时）
+    'test': 60 * 60,
+    // 匹配结果缓存时间中等（1小时）
+    'match': 60 * 60,
+    // 默认缓存时间（1小时）
+    'default': DEFAULT_TTL_SECONDS
+};
+
 // 初始化 NodeCache 实例
 const cache = new NodeCache({
     stdTTL: DEFAULT_TTL_SECONDS, // 标准默认生存时间（秒）
@@ -72,22 +90,41 @@ function get(key) {
 }
 
 /**
+ * 根据缓存键前缀获取适当的 TTL
+ * @param {string} key - 缓存键
+ * @returns {number} - 适当的 TTL（秒）
+ */
+function getTTLForType(key) {
+    if (!key) return DEFAULT_TTL_SECONDS;
+
+    // 从缓存键中提取类型
+    // 缓存键格式通常为 "类型:参数"，例如 "search:name=七里香"
+    const type = key.split(':')[0];
+
+    // 根据类型返回相应的 TTL
+    return TTL_CONFIG[type] || TTL_CONFIG.default;
+}
+
+/**
  * 将数据存入缓存
  * @param {string} key - 数据的缓存键
  * @param {*} value - 要存入缓存的数据
- * @param {number} [ttl=DEFAULT_TTL_SECONDS] - 该缓存项的生存时间（秒），默认为全局默认TTL
+ * @param {number} [ttl=null] - 该缓存项的生存时间（秒），如果为 null 则根据类型自动选择
  * @returns {boolean} - 如果缓存启用且键有效，则返回 NodeCache set 操作的结果 (通常是 true)；否则返回 false
  */
-function set(key, value, ttl = DEFAULT_TTL_SECONDS) {
+function set(key, value, ttl = null) {
     // 如果缓存未启用或键无效，则不进行存储，直接返回 false
     if (!CACHE_ENABLED || !key) return false;
 
+    // 如果未指定 ttl，则根据类型自动选择
+    const effectiveTTL = ttl !== null ? ttl : getTTLForType(key);
+
     // 记录缓存设置日志
     if (process.env.NODE_ENV !== 'production') {
-        console.debug(`[Cache SET] Key: ${key}, TTL: ${ttl}s`);
+        console.debug(`[Cache SET] Key: ${key}, TTL: ${effectiveTTL}s`);
     }
     // 将数据存入 NodeCache 实例
-    return cache.set(key, value, ttl);
+    return cache.set(key, value, effectiveTTL);
 }
 
 /**
@@ -127,6 +164,8 @@ module.exports = {
     del, // 删除缓存方法
     flush, // 清空缓存方法
     generateCacheKey, // 生成缓存键的方法
+    getTTLForType, // 根据类型获取 TTL 的方法
     DEFAULT_TTL_SECONDS, // 导出的默认TTL，方便外部参考
-    CACHE_ENABLED // 导出缓存是否启用的状态，方便外部参考
+    CACHE_ENABLED, // 导出缓存是否启用的状态，方便外部参考
+    TTL_CONFIG // 导出缓存 TTL 配置，方便外部参考
 };
