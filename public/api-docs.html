@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <title>UNM-Server - API 文档</title>
     <link rel="shortcut icon" href="./favicon.png" type="image/x-icon" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="./assets/fontawesome/css/all.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -83,25 +83,29 @@
             background-color: var(--bg-color-dark);
         }
 
-        a { /* General links */
+        a {
+            /* General links */
             text-decoration: none;
             color: var(--text-color-gray);
             transition: color 0.3s ease;
         }
 
-        a:hover { /* General links hover */
+        a:hover {
+            /* General links hover */
             color: var(--accent-color-start);
         }
 
         html.dark-mode a:hover {
             color: var(--accent-color-end);
         }
-        
-        .api-example-link { /* Specific style for API example links */
+
+        .api-example-link {
+            /* Specific style for API example links */
             color: var(--link-color) !important;
             text-decoration: underline !important;
             text-decoration-style: dotted !important;
         }
+
         .api-example-link:hover {
             text-decoration-style: solid !important;
         }
@@ -513,38 +517,48 @@
             color: var(--accent-color-end);
         }
 
-        .api-endpoint code { /* General code style within endpoint descriptions */
+        .api-endpoint code {
+            /* General code style within endpoint descriptions */
             font-family: 'Fira Code', 'Courier New', monospace;
             background-color: var(--result-bg-light);
             padding: 0.2em 0.4em;
             border-radius: 4px;
             font-size: 0.9em;
-            color: var(--json-string-color); /* Default code text color */
+            color: var(--json-string-color);
+            /* Default code text color */
         }
 
         html.dark-mode .api-endpoint code {
             background-color: var(--result-bg-dark);
         }
-        
-        .api-endpoint pre code .placeholder-param { /* Style for parameter placeholders like [关键字] */
-            color: var(--json-number-color); /* Using number color for param placeholders */
+
+        .api-endpoint pre code .placeholder-param {
+            /* Style for parameter placeholders like [关键字] */
+            color: var(--json-number-color);
+            /* Using number color for param placeholders */
             font-style: italic;
         }
 
         .api-endpoint pre code a.api-example-link,
-        .api-endpoint pre code a.api-example-link code { /* Ensure link text color and code within link are styled as links */
-            color: var(--link-color) !important; /* Use themed link color */
-            background-color: transparent !important; /* No background for code inside link */
+        .api-endpoint pre code a.api-example-link code {
+            /* Ensure link text color and code within link are styled as links */
+            color: var(--link-color) !important;
+            /* Use themed link color */
+            background-color: transparent !important;
+            /* No background for code inside link */
             padding: 0;
-            font-size: inherit; /* Inherit font size from pre>code */
+            font-size: inherit;
+            /* Inherit font size from pre>code */
         }
-        
-        .api-endpoint pre code a.api-example-link .domain-placeholder { /* Class for the domain part of the link text */
-             /* Styles will be reset by JS, but can have initial style if needed */
+
+        .api-endpoint pre code a.api-example-link .domain-placeholder {
+            /* Class for the domain part of the link text */
+            /* Styles will be reset by JS, but can have initial style if needed */
         }
 
 
-        .api-endpoint pre { /* Block for example URLs and JSON responses */
+        .api-endpoint pre {
+            /* Block for example URLs and JSON responses */
             padding: 1rem;
             border-radius: 8px;
             overflow-x: auto;
@@ -552,7 +566,8 @@
             background-color: var(--result-bg-light);
             border: 1px solid var(--result-border-light);
             color: var(--text-color);
-            margin-top: 0.5rem; /* Added margin for spacing */
+            margin-top: 0.5rem;
+            /* Added margin for spacing */
         }
 
         html.dark-mode .api-endpoint pre {
@@ -635,7 +650,7 @@
             一个简洁的音乐 API 服务，整合了 GDStudio API 和 UnblockNeteaseMusic 的核心功能，提供音乐搜索、链接获取、封面、歌词以及音源解锁服务。
         </p>
         <div class="control">
-             <a href="#api-documentation" class="button-link">
+            <a href="#api-documentation" class="button-link">
                 <i class="fas fa-book-open"></i>
                 <span>查看API文档</span>
             </a>
@@ -645,12 +660,14 @@
             </a>
         </div>
         <div id="test-result-container" class="result-container" style="display: none;">
-             </div>
+        </div>
     </main>
 
     <section class="api-docs-section" id="api-documentation">
         <h2>API 使用文档</h2>
-        <p style="margin-bottom:1.5rem;">所有接口均返回统一的 JSON 结构: <code>{ "code": &lt;状态码&gt;, "message": "&lt;消息&gt;", "data": &lt;数据对象或null&gt; }</code>。点击下方示例 URL 可在新窗口中测试对应接口。</p>
+        <p style="margin-bottom:1.5rem;">所有接口均返回统一的 JSON 结构:
+            <code>{ "code": &lt;状态码&gt;, "message": "&lt;消息&gt;", "data": &lt;数据对象或null&gt; }</code>。点击下方示例 URL
+            可在新窗口中测试对应接口。</p>
 
         <article class="api-endpoint">
             <h3>GET /</h3>
@@ -693,7 +710,7 @@
     }
 }</code></pre>
         </article>
-        
+
         <article class="api-endpoint">
             <h3>GET /test</h3>
             <p>使用预设歌曲 ID 测试 <code>@unblockneteasemusic/server</code> 的核心解锁功能，并返回获取到的音源信息。</p>
@@ -711,7 +728,7 @@
         "size": 10485760,
         "type": "mp3",
         "md5": "...",
-        "source": "kuwo" 
+        "source": "kuwo"
     }
 }</code></pre>
             <p>如果结果来自缓存，<code>message</code> 会包含 "(from cache)"。</p>
@@ -753,7 +770,8 @@
             <ul>
                 <li><code>id</code>: <strong>(必需)</strong> 歌曲的 Track ID。</li>
                 <li><code>source</code>: (可选) 指定音乐源。默认为配置的默认源。</li>
-                <li><code>br</code>: (可选) 请求的音质 (<code>128</code>, <code>192</code>, <code>320</code>, <code>740</code>, <code>999</code>)。默认为 <code>999</code>。</li>
+                <li><code>br</code>: (可选) 请求的音质 (<code>128</code>, <code>192</code>, <code>320</code>, <code>740</code>,
+                    <code>999</code>)。默认为 <code>999</code>。</li>
             </ul>
             <strong>示例 (点击在新窗口打开):</strong>
             <pre><code><a class="api-example-link" href="[你的域名]/url?id=158616&amp;source=&amp;br=320" target="_blank" title="在新窗口中打开示例链接"><span class="domain-placeholder">[你的域名]</span>/url?id=158616&amp;source=&amp;br=320</a></code></pre>
@@ -763,7 +781,7 @@
     "message": "请求成功 (源: kuwo)",
     "data": {
         "id": "12345",
-        "br": 320000, 
+        "br": 320000,
         "url": "http://example.com/song.mp3",
         "source": "kuwo"
         /* proxyUrl (如果适用) */
@@ -776,7 +794,8 @@
             <p>获取指定专辑图 ID 的图片链接 (基于 GDStudio API)。</p>
             <strong>参数:</strong>
             <ul>
-                <li><code>id</code>: <strong>(必需)</strong> 专辑图的 Pic ID (来自 <code>/search</code> 结果的 <code>pic_id</code>)。</li>
+                <li><code>id</code>: <strong>(必需)</strong> 专辑图的 Pic ID (来自 <code>/search</code> 结果的
+                    <code>pic_id</code>)。</li>
                 <li><code>source</code>: (可选) 指定音乐源。默认为配置的默认源。</li>
                 <li><code>size</code>: (可选) 图片尺寸 (<code>300</code> 或 <code>500</code>)。默认为 <code>300</code>。</li>
             </ul>
@@ -798,7 +817,8 @@
             <p>获取指定歌词 ID 的歌词内容 (基于 GDStudio API)。</p>
             <strong>参数:</strong>
             <ul>
-                <li><code>id</code>: <strong>(必需)</strong> 歌词的 Lyric ID (来自 <code>/search</code> 结果的 <code>lyric_id</code>)。</li>
+                <li><code>id</code>: <strong>(必需)</strong> 歌词的 Lyric ID (来自 <code>/search</code> 结果的
+                    <code>lyric_id</code>)。</li>
                 <li><code>source</code>: (可选) 指定音乐源。默认为配置的默认源。</li>
             </ul>
             <strong>示例 (点击在新窗口打开):</strong>
@@ -821,7 +841,8 @@
             <strong>参数:</strong>
             <ul>
                 <li><code>id</code>: <strong>(必需)</strong> 歌曲的 ID。</li>
-                <li><code>server</code>: (可选) 指定音源列表（逗号分隔, 如 <code>kuwo,migu</code>）。默认为配置的 `UNM_SETTINGS.defaultSources`。</li>
+                <li><code>server</code>: (可选) 指定音源列表（逗号分隔, 如 <code>kuwo,migu</code>）。默认为配置的
+                    `UNM_SETTINGS.defaultSources`。</li>
             </ul>
             <strong>示例 (点击在新窗口打开):</strong>
             <pre><code><a class="api-example-link" href="[你的域名]/match?id=158616&amp;server=" target="_blank" title="在新窗口中打开示例链接"><span class="domain-placeholder">[你的域名]</span>/match?id=158616&amp;server=</a></code></pre>

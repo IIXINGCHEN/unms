@@ -79,12 +79,14 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
+      // 允许内联事件处理器（如 onclick 属性）
+      scriptSrcAttr: ["'unsafe-inline'"],
       // 允许从 cdnjs.cloudflare.com 和 fonts.googleapis.com 加载样式表
       styleSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
-      // 允许从 fonts.gstatic.com 加载字体
-      fontSrc: ["'self'", "fonts.gstatic.com"],
+      // 允许从 fonts.gstatic.com 和 cdnjs.cloudflare.com 加载字体
+      fontSrc: ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
