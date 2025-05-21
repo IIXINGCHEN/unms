@@ -5,7 +5,7 @@
 // Theme toggling function
 const toggleDarkMode = (darkModeMediaQuery) => {
     const themeToggle = document.getElementById('themeToggle');
-    if (document.documentElement && themeToggle) { 
+    if (document.documentElement && themeToggle) {
         if (darkModeMediaQuery.matches) {
             document.documentElement.classList.add("dark-mode");
             themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
@@ -28,7 +28,7 @@ const socialJump = (type) => {
             break;
         case "email":
             window.location.href = "mailto:imsyy@foxmail.com"; // 请替换为您的邮箱
-            return; 
+            return;
         default:
             return;
     }
@@ -112,11 +112,11 @@ function formatJsonValue(value) {
     const escapeHtml = (unsafe) => {
         if (typeof unsafe !== 'string') return unsafe;
         return unsafe
-             .replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     };
 
     if (typeof value === 'string') {
@@ -135,15 +135,15 @@ function formatJsonValue(value) {
 // Updated displayResult function using the recursive renderer
 function displayResult(container, apiResponse) {
     if (!container) return;
-    container.innerHTML = ''; 
+    container.innerHTML = '';
     const dl = document.createElement('dl');
     dl.className = 'result-dl';
     try {
         if (apiResponse && typeof apiResponse.code !== 'undefined' && typeof apiResponse.message !== 'undefined') {
-            renderJsonObject(apiResponse, dl); 
+            renderJsonObject(apiResponse, dl);
         } else {
             console.warn("Displaying result with non-standard structure:", apiResponse);
-            renderJsonObject(apiResponse, dl); 
+            renderJsonObject(apiResponse, dl);
         }
         container.appendChild(dl);
     } catch (e) {
@@ -186,8 +186,8 @@ const clickFunction = () => {
                 console.error("JSON Parsing Error or Non-JSON response:", jsonError, response);
                 // 尝试读取原始文本响应以提供更多上下文
                 return response.text().then(textData => {
-                    displayError(resultContainer, 
-                        `服务器响应格式错误 (状态码: ${response.status})`, 
+                    displayError(resultContainer,
+                        `服务器响应格式错误 (状态码: ${response.status})`,
                         `未能解析JSON。原始响应 (部分): ${textData.substring(0, 200)}...`);
                 });
             });
@@ -205,7 +205,7 @@ function createParticles() {
     const particlesContainer = document.getElementById('particles');
     if (!particlesContainer) return;
     const particleCount = 20;
-    particlesContainer.innerHTML = ''; 
+    particlesContainer.innerHTML = '';
 
     for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
@@ -214,7 +214,7 @@ function createParticles() {
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
         particle.style.left = `${Math.random() * 100}%`;
-        particle.style.bottom = `-${size}px`; 
+        particle.style.bottom = `-${size}px`;
         const duration = Math.random() * 10 + 10;
         particle.style.animationDuration = `${duration}s`;
         particle.style.animationDelay = `${Math.random() * 10}s`;
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (darkModeMediaQuery.addEventListener) {
         darkModeMediaQuery.addEventListener('change', () => toggleDarkMode(darkModeMediaQuery));
-    } else if (darkModeMediaQuery.addListener) { 
+    } else if (darkModeMediaQuery.addListener) {
         darkModeMediaQuery.addListener(() => toggleDarkMode(darkModeMediaQuery));
     }
 
@@ -268,17 +268,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiExampleLinks = document.querySelectorAll('a.api-example-link');
     apiExampleLinks.forEach(link => {
         let href = link.getAttribute('href');
-        if (href && href.startsWith('[你的域名]')) { 
+        if (href && href.startsWith('[你的域名]')) {
             link.setAttribute('href', href.replace('[你的域名]', currentOrigin));
         }
     });
     // --- End of dynamic domain update ---
-    
+
     const githubLinkMain = document.getElementById('viewOnGithub'); // Assuming main.html also might have this
-    if (githubLinkMain && githubLinkMain.href.includes("your-repo/unm-server")) { 
-        githubLinkMain.href = "https://github.com/imsyy/UNM-Server-AXC"; 
+    if (githubLinkMain && githubLinkMain.href.includes("your-repo/unm-server")) {
+        githubLinkMain.href = "https://github.com/imsyy/UNM-Server-AXC";
     }
 
-    // Note: clickFunction is defined globally above, so index.html's onclick="clickFunction()" will find it.
-    // No need to attach event listener for it here if using inline onclick.
+    // 添加事件监听器，替代内联事件处理器
+    const testApiButton = document.getElementById('test-api-button');
+    if (testApiButton) {
+        testApiButton.addEventListener('click', clickFunction);
+    }
+
+    const apiDocsButton = document.getElementById('api-docs-button');
+    if (apiDocsButton) {
+        apiDocsButton.addEventListener('click', () => {
+            window.location.href = '/api-docs.html';
+        });
+    }
+
+    // 添加社交媒体图标的事件监听器
+    const socialGithub = document.getElementById('social-github');
+    const socialHome = document.getElementById('social-home');
+    const socialEmail = document.getElementById('social-email');
+
+    if (socialGithub) {
+        socialGithub.addEventListener('click', () => socialJump('github'));
+    }
+    if (socialHome) {
+        socialHome.addEventListener('click', () => socialJump('home'));
+    }
+    if (socialEmail) {
+        socialEmail.addEventListener('click', () => socialJump('email'));
+    }
 });
