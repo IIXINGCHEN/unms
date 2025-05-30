@@ -1,0 +1,11 @@
+node_modules
+dist
+.nuxt
+.output
+coverage
+*.log
+.env*
+public/assets
+*.min.js
+*.min.css
+pnpm-lock.yaml
