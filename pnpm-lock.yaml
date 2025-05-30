@@ -17,6 +17,9 @@ importers:
       axios:
         specifier: ^1.7.2
         version: 1.9.0(debug@4.4.1)
+      bytes:
+        specifier: ^3.1.2
+        version: 3.1.2
       cache-content-type:
         specifier: ^2.1.0
         version: 2.1.0
@@ -32,9 +35,15 @@ importers:
       cookies:
         specifier: ^0.9.1
         version: 0.9.1
+      core-util-is:
+        specifier: ^1.0.3
+        version: 1.0.3
       debug:
         specifier: ^4.4.1
         version: 4.4.1(supports-color@5.5.0)
+      depd:
+        specifier: ^2.0.0
+        version: 2.0.0
       destroy:
         specifier: ^1.2.0
         version: 1.2.0
@@ -44,18 +53,30 @@ importers:
       escape-html:
         specifier: ^1.0.3
         version: 1.0.3
+      etag:
+        specifier: ^1.8.1
+        version: 1.8.1
       fresh:
         specifier: ^0.5.2
         version: 0.5.2
       http-errors:
         specifier: ^2.0.0
         version: 2.0.0
+      iconv-lite:
+        specifier: ^0.6.3
+        version: 0.6.3
       inflection:
         specifier: ^3.0.2
         version: 3.0.2
+      inherits:
+        specifier: ^2.0.4
+        version: 2.0.4
       is-generator-function:
         specifier: ^1.1.0
         version: 1.1.0
+      isarray:
+        specifier: ^2.0.5
+        version: 2.0.5
       keygrip:
         specifier: ^1.1.0
         version: 1.1.0
@@ -89,6 +110,9 @@ importers:
       koa2-cors:
         specifier: ^2.0.6
         version: 2.0.6
+      media-typer:
+        specifier: ^1.1.0
+        version: 1.1.0
       mime-types:
         specifier: ^3.0.1
         version: 3.0.1
@@ -107,15 +131,45 @@ importers:
       parseurl:
         specifier: ^1.3.3
         version: 1.3.3
+      process-nextick-args:
+        specifier: ^2.0.1
+        version: 2.0.1
+      qs:
+        specifier: ^6.14.0
+        version: 6.14.0
+      range-parser:
+        specifier: ^1.2.1
+        version: 1.2.1
+      raw-body:
+        specifier: ^3.0.0
+        version: 3.0.0
+      safe-buffer:
+        specifier: ^5.2.1
+        version: 5.2.1
       serverless-http:
         specifier: ^3.2.0
         version: 3.2.0
+      setprototypeof:
+        specifier: ^1.2.0
+        version: 1.2.0
       statuses:
         specifier: ^2.0.1
         version: 2.0.1
+      string_decoder:
+        specifier: ^1.3.0
+        version: 1.3.0
+      toidentifier:
+        specifier: ^1.0.1
+        version: 1.0.1
       type-is:
         specifier: ^2.0.1
         version: 2.0.1
+      unpipe:
+        specifier: ^1.0.0
+        version: 1.0.0
+      util-deprecate:
+        specifier: ^1.0.2
+        version: 1.0.2
       vary:
         specifier: ^1.1.2
         version: 1.1.2
@@ -462,6 +516,9 @@ packages:
   copy-to@2.0.1:
     resolution: {integrity: sha512-3DdaFaU/Zf1AnpLiFDeNCD4TOWe3Zl2RZaTzUvWiIk5ERzcCodOE20Vqq4fzCbNoHURFHT4/us/Lfq+S2zyY4w==}
 
+  core-util-is@1.0.3:
+    resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
+
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -569,6 +626,10 @@ packages:
   escape-string-regexp@1.0.5:
     resolution: {integrity: sha512-vbRorB5FUQWvla16U8R/qgaFIya2qGzwDrNmCZuYKrbdSUMG6I1ZCGQRefkRVhuOkIGVne7BQ35DSfo1qvJqFg==}
     engines: {node: '>=0.8.0'}
+
+  etag@1.8.1:
+    resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
+    engines: {node: '>= 0.6'}
 
   extend-shallow@2.0.1:
     resolution: {integrity: sha512-zCnTtlxNoAiDc3gqY2aYAWFx7XWWiasuF2K8Me5WbN8otHKTUKBwjPtNpRs/rbUZm7KxWAaNj7P1a/p52GbVug==}
@@ -685,6 +746,10 @@ packages:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
     engines: {node: '>=0.10.0'}
 
+  iconv-lite@0.6.3:
+    resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
+    engines: {node: '>=0.10.0'}
+
   ignore-by-default@1.0.1:
     resolution: {integrity: sha512-Ius2VYcGNk7T90CppJqcIkS5ooHUZyIQK+ClZfMfMNFEF9VSE73Fq+906u/CWu92x4gzZMWOwfFYckPObzdEbA==}
 
@@ -743,6 +808,9 @@ packages:
   is-whitespace@0.3.0:
     resolution: {integrity: sha512-RydPhl4S6JwAyj0JJjshWJEFG6hNye3pZFBRZaTUfZFwGHxzppNaNOVgQuS/E/SlhrApuMXrpnK1EEIXfdo3Dg==}
     engines: {node: '>=0.10.0'}
+
+  isarray@2.0.5:
+    resolution: {integrity: sha512-xHjhDr3cNBK0BzdUJSPXZntQUx/mwMS5Rw4A7lPJ90XGAO6ISP/ePDNuo0vhqOZU+UD5JoodwCAAoZQd3FeAKw==}
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
@@ -979,6 +1047,9 @@ packages:
     resolution: {integrity: sha512-G9xUchgTEiNpormdYBl+Pha50gOUovT18IvAe7EYMZ1/f9W/WWMPRn+xI68yXNMUk3QXHDwo/1wV/4NejVNe1w==}
     engines: {node: '>=0.10.0'}
 
+  process-nextick-args@2.0.1:
+    resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
+
   process-warning@1.0.0:
     resolution: {integrity: sha512-du4wfLyj4yCZq1VupnVSZmRsPJsNuxoDQFdCFHLaYiEbFBD7QE0a+I4D7hOxrVnh78QE/YipFAj9lXHiXocV+Q==}
 
@@ -1001,8 +1072,16 @@ packages:
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
 
+  range-parser@1.2.1:
+    resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
+    engines: {node: '>= 0.6'}
+
   raw-body@2.5.2:
     resolution: {integrity: sha512-8zGqypfENjCIqGhgXToC8aB2r7YrBX+AQAfIPs/Mlk+BtPTztOvTS01NRW/3Eh60J+a48lt8qsCzirQ6loCVfA==}
+    engines: {node: '>= 0.8'}
+
+  raw-body@3.0.0:
+    resolution: {integrity: sha512-RmkhL8CAyCRPXCE28MMH0z2PNWQBNk2Q09ZdxM9IOOXwxwZbN+qbWaatPkdkWIKL2ZVDImrN/pK5HTRz2PcS4g==}
     engines: {node: '>= 0.8'}
 
   readable-stream@3.6.2:
@@ -1414,6 +1493,8 @@ snapshots:
 
   copy-to@2.0.1: {}
 
+  core-util-is@1.0.3: {}
+
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -1500,6 +1581,8 @@ snapshots:
   escape-html@1.0.3: {}
 
   escape-string-regexp@1.0.5: {}
+
+  etag@1.8.1: {}
 
   extend-shallow@2.0.1:
     dependencies:
@@ -1623,6 +1706,10 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
+  iconv-lite@0.6.3:
+    dependencies:
+      safer-buffer: 2.1.2
+
   ignore-by-default@1.0.1: {}
 
   inflation@2.1.0: {}
@@ -1668,6 +1755,8 @@ snapshots:
       hasown: 2.0.2
 
   is-whitespace@0.3.0: {}
+
+  isarray@2.0.5: {}
 
   isexe@2.0.0: {}
 
@@ -1989,6 +2078,8 @@ snapshots:
       extend-shallow: 2.0.1
       js-beautify: 1.15.4
 
+  process-nextick-args@2.0.1: {}
+
   process-warning@1.0.0: {}
 
   proto-list@1.2.4: {}
@@ -2008,11 +2099,20 @@ snapshots:
 
   quick-format-unescaped@4.0.4: {}
 
+  range-parser@1.2.1: {}
+
   raw-body@2.5.2:
     dependencies:
       bytes: 3.1.2
       http-errors: 2.0.0
       iconv-lite: 0.4.24
+      unpipe: 1.0.0
+
+  raw-body@3.0.0:
+    dependencies:
+      bytes: 3.1.2
+      http-errors: 2.0.0
+      iconv-lite: 0.6.3
       unpipe: 1.0.0
 
   readable-stream@3.6.2:
