@@ -621,9 +621,43 @@ export class CacheFactory {
    * 根据配置自动选择缓存类型
    */
   static createCache(redisConfig?: RedisConfig, memoryOptions?: { stdTTL?: number; checkperiod?: number }): CacheService {
-    if (redisConfig && (redisConfig.url || redisConfig.host)) {
+    // 检查 Redis 开关
+    const redisEnabled = process.env.REDIS_ENABLED !== 'false';
+
+    if (redisEnabled && redisConfig && (redisConfig.url || redisConfig.host)) {
+      console.log('🔄 Redis 开关已启用，尝试连接 Redis...');
       return new RedisCacheService(redisConfig);
     }
+
+    if (!redisEnabled) {
+      console.log('📦 Redis 开关已禁用，使用内存缓存');
+    } else {
+      console.log('📦 Redis 配置不完整，使用内存缓存');
+    }
+
+    return new MemoryCacheService(memoryOptions);
+  }
+
+  /**
+   * 智能缓存创建器 - 支持服务开关
+   */
+  static createSmartCache(redisConfig?: RedisConfig, memoryOptions?: { stdTTL?: number; checkperiod?: number }): CacheService {
+    // 检查缓存开关
+    const cacheEnabled = process.env.CACHE_ENABLED !== 'false';
+    const redisEnabled = process.env.REDIS_ENABLED !== 'false';
+
+    if (!cacheEnabled) {
+      console.log('📦 缓存系统已通过环境变量禁用');
+      // 返回一个空的缓存实现
+      return new MemoryCacheService({ stdTTL: 0 }); // TTL为0表示立即过期
+    }
+
+    if (redisEnabled && redisConfig && (redisConfig.url || redisConfig.host)) {
+      console.log('🔄 使用 Redis 缓存 (开关已启用)');
+      return new RedisCacheService(redisConfig);
+    }
+
+    console.log('📦 使用内存缓存');
     return new MemoryCacheService(memoryOptions);
   }
 }

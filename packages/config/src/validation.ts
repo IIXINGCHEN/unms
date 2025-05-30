@@ -1,9 +1,26 @@
 import { z } from 'zod';
 
 /**
+ * 服务开关配置 Schema
+ */
+const ServiceSwitchesSchema = z.object({
+  REDIS_ENABLED: z.coerce.boolean().default(true),
+  DATABASE_ENABLED: z.coerce.boolean().default(true),
+  LOGGING_ENABLED: z.coerce.boolean().default(true),
+  RATE_LIMITING_ENABLED: z.coerce.boolean().default(true),
+  HEALTH_CHECK_ENABLED: z.coerce.boolean().default(true),
+  SECURITY_MIDDLEWARE_ENABLED: z.coerce.boolean().default(true),
+  CORS_ENABLED: z.coerce.boolean().default(true),
+  CACHE_ENABLED: z.coerce.boolean().default(true),
+  METRICS_ENABLED: z.coerce.boolean().default(false),
+  API_DOCS_ENABLED: z.coerce.boolean().default(true),
+  GDSTUDIO_ENABLED: z.coerce.boolean().default(true),
+});
+
+/**
  * 生产环境配置验证 Schema
  */
-const ProductionEnvSchema = z.object({
+const ProductionEnvSchema = ServiceSwitchesSchema.extend({
   NODE_ENV: z.literal('production'),
   PORT: z.coerce.number().min(1).max(65535),
   DATABASE_URL: z.string().url().startsWith('postgresql://').optional(),
@@ -19,14 +36,17 @@ const ProductionEnvSchema = z.object({
   GDSTUDIO_API_URL: z.string().url().optional(),
   GDSTUDIO_REQUEST_TIMEOUT: z.coerce.number().min(1000).max(30000).optional(),
   // 缓存配置
-  CACHE_ENABLED: z.coerce.boolean().default(true),
   CACHE_DEFAULT_TTL_SECONDS: z.coerce.number().min(60).max(86400).default(3600),
+  // 速率限制配置
+  GLOBAL_RATE_LIMIT_PER_MINUTE: z.coerce.number().min(1).max(1000).default(60),
+  API_RATE_LIMIT_PER_MINUTE: z.coerce.number().min(1).max(500).default(30),
+  SEARCH_RATE_LIMIT_PER_MINUTE: z.coerce.number().min(1).max(100).default(20),
 });
 
 /**
  * 开发环境配置验证 Schema
  */
-const DevelopmentEnvSchema = z.object({
+const DevelopmentEnvSchema = ServiceSwitchesSchema.extend({
   NODE_ENV: z.string().optional().default('development'),
   PORT: z.coerce.number().min(1).max(65535).default(5678),
   ALLOWED_DOMAIN: z.string().default('*'),
@@ -36,14 +56,17 @@ const DevelopmentEnvSchema = z.object({
   REDIS_PASSWORD: z.string().optional(),
   GDSTUDIO_API_URL: z.string().url().optional(),
   GDSTUDIO_REQUEST_TIMEOUT: z.coerce.number().optional(),
-  CACHE_ENABLED: z.coerce.boolean().default(true),
   CACHE_DEFAULT_TTL_SECONDS: z.coerce.number().default(3600),
+  // 速率限制配置（开发环境更宽松）
+  GLOBAL_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(120),
+  API_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(60),
+  SEARCH_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(40),
 });
 
 /**
  * 测试环境配置验证 Schema
  */
-const TestEnvSchema = z.object({
+const TestEnvSchema = ServiceSwitchesSchema.extend({
   NODE_ENV: z.literal('test'),
   PORT: z.coerce.number().min(1).max(65535).default(5679),
   ALLOWED_DOMAIN: z.string().default('*'),
@@ -52,6 +75,10 @@ const TestEnvSchema = z.object({
   REDIS_URL: z.string().optional(),
   CACHE_ENABLED: z.coerce.boolean().default(false), // 测试环境默认禁用缓存
   CACHE_DEFAULT_TTL_SECONDS: z.coerce.number().default(60),
+  // 测试环境速率限制（更宽松）
+  GLOBAL_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(1000),
+  API_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(500),
+  SEARCH_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(200),
 });
 
 /**
@@ -89,6 +116,15 @@ export function validateEnvironment(): void {
       console.log(`  - 缓存: ${validatedEnv.CACHE_ENABLED ? '启用' : '禁用'}`);
       console.log(`  - 数据库: ${validatedEnv.DATABASE_URL ? '已配置' : '未配置'}`);
       console.log(`  - Redis: ${validatedEnv.REDIS_URL ? '已配置' : '未配置'}`);
+
+      // 显示服务开关状态
+      console.log('🔧 服务开关状态:');
+      console.log(`  - Redis: ${validatedEnv.REDIS_ENABLED ? '启用' : '禁用'}`);
+      console.log(`  - 数据库: ${validatedEnv.DATABASE_ENABLED ? '启用' : '禁用'}`);
+      console.log(`  - 日志: ${validatedEnv.LOGGING_ENABLED ? '启用' : '禁用'}`);
+      console.log(`  - 速率限制: ${validatedEnv.RATE_LIMITING_ENABLED ? '启用' : '禁用'}`);
+      console.log(`  - 安全中间件: ${validatedEnv.SECURITY_MIDDLEWARE_ENABLED ? '启用' : '禁用'}`);
+      console.log(`  - 健康检查: ${validatedEnv.HEALTH_CHECK_ENABLED ? '启用' : '禁用'}`);
     }
 
     return validatedEnv;
@@ -184,4 +220,31 @@ export function checkConfigCompatibility(): void {
       console.warn(`  - ${warning}`);
     });
   }
+}
+
+/**
+ * 获取服务开关状态
+ */
+export function getServiceSwitches() {
+  return {
+    redis: process.env.REDIS_ENABLED !== 'false',
+    database: process.env.DATABASE_ENABLED !== 'false',
+    logging: process.env.LOGGING_ENABLED !== 'false',
+    rateLimiting: process.env.RATE_LIMITING_ENABLED !== 'false',
+    healthCheck: process.env.HEALTH_CHECK_ENABLED !== 'false',
+    securityMiddleware: process.env.SECURITY_MIDDLEWARE_ENABLED !== 'false',
+    cors: process.env.CORS_ENABLED !== 'false',
+    cache: process.env.CACHE_ENABLED !== 'false',
+    metrics: process.env.METRICS_ENABLED === 'true',
+    apiDocs: process.env.API_DOCS_ENABLED !== 'false',
+    gdstudio: process.env.GDSTUDIO_ENABLED !== 'false',
+  };
+}
+
+/**
+ * 检查特定服务是否启用
+ */
+export function isServiceEnabled(service: keyof ReturnType<typeof getServiceSwitches>): boolean {
+  const switches = getServiceSwitches();
+  return switches[service];
 }

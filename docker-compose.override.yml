@@ -1,0 +1,49 @@
+# Docker Compose 覆盖配置文件
+# 用于开发环境和不同的部署场景
+
+version: '3.8'
+
+services:
+  # 开发环境 API 服务配置
+  unm-api:
+    environment:
+      # 开发环境默认配置
+      - NODE_ENV=development
+      - REDIS_ENABLED=true
+      - DATABASE_ENABLED=false  # 开发环境可能不需要数据库
+      - LOGGING_ENABLED=true
+      - RATE_LIMITING_ENABLED=false  # 开发环境禁用速率限制
+      - HEALTH_CHECK_ENABLED=true
+      - SECURITY_MIDDLEWARE_ENABLED=false  # 开发环境可能禁用某些安全中间件
+      - CORS_ENABLED=true
+      - CACHE_ENABLED=true
+      - METRICS_ENABLED=true  # 开发环境启用指标
+      - API_DOCS_ENABLED=true
+      - GDSTUDIO_ENABLED=true
+      # 开发环境更宽松的速率限制
+      - GLOBAL_RATE_LIMIT_PER_MINUTE=1000
+      - API_RATE_LIMIT_PER_MINUTE=500
+      - SEARCH_RATE_LIMIT_PER_MINUTE=200
+      # 开发环境 CORS 设置
+      - ALLOWED_DOMAIN=*
+    volumes:
+      # 开发环境挂载源代码
+      - ./apps/api/src:/app/src:ro
+      - ./packages:/app/packages:ro
+    ports:
+      # 开发环境暴露调试端口
+      - "9229:9229"  # Node.js 调试端口
+    command: ["npm", "run", "dev"]  # 开发模式启动
+
+  # 开发环境 Redis 配置
+  redis:
+    ports:
+      - "6379:6379"  # 开发环境暴露 Redis 端口
+    command: redis-server --appendonly yes  # 开发环境不需要密码
+
+  # 开发环境 PostgreSQL 配置
+  postgres:
+    ports:
+      - "5432:5432"  # 开发环境暴露数据库端口
+    environment:
+      - POSTGRES_PASSWORD=dev_password  # 开发环境简单密码
