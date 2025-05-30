@@ -15,7 +15,6 @@
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
-    "@unblockneteasemusic/server": "latest",
     "accepts": "^1.3.8",
     "axios": "^1.7.2",
     "bytes": "^3.1.2",
@@ -74,5 +73,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
+  },
+  "optionalDependencies": {
+    "@unblockneteasemusic/server": "latest"
   }
 }

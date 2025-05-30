@@ -10,9 +10,8 @@ const views = require("koa-views");
 const ratelimit = require("koa-ratelimit");
 const helmet = require("koa-helmet");
 
-// 注意：UNM 模块的加载现在在路由文件中延迟进行，以避免模块级别的加载错误
-
-const router = require("./routes");
+// 使用专门的 Netlify 路由文件，不包含 UNM 模块依赖
+const router = require("./routes/netlify-routes");
 
 // 导入配置验证模块
 const { validateConfig } = require("./config/validation");
