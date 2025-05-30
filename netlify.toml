@@ -10,7 +10,6 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["hono"]
 
 [[redirects]]
   from = "/health"
