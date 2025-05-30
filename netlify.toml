@@ -12,8 +12,10 @@
 [build.environment]
   # Node.js 版本
   NODE_VERSION = "18"
-  # 包管理器
+  # 包管理器设置
   NPM_FLAGS = "--production=false"
+  # 使用项目指定的 pnpm 版本
+  PNPM_VERSION = "9.15.4"
 
 # 函数配置
 [functions]
