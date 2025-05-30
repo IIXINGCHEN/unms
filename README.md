@@ -9,7 +9,7 @@
 - **🎯 纯后端架构**: 专注于API服务，无前端依赖
 - **⚡ 高性能框架**: 基于 Hono 轻量级高性能Web框架
 - **🔒 类型安全**: 完整的 TypeScript 支持
-- **📦 Monorepo架构**: pnpm workspaces 管理多包项目
+- **📦 扁平化架构**: 简化的项目结构，易于维护
 - **🚀 生产级缓存**: Redis + 内存缓存双重降级
 - **🗄️ 数据库集成**: Prisma ORM + PostgreSQL (可选)
 - **🎵 多平台支持**: 支持网易云音乐、QQ音乐等多平台数据源
@@ -19,13 +19,19 @@
 ## 📦 项目结构
 
 ```
-├── apps/
-│   └── api/                 # Hono API 服务
-├── packages/
+├── src/
+│   ├── api/                # Hono API 服务
+│   │   ├── routes/         # API 路由
+│   │   ├── middleware/     # 中间件
+│   │   ├── services/       # 业务服务
+│   │   └── utils/          # 工具函数
 │   ├── shared/             # 共享类型和工具
 │   ├── config/             # 配置管理
 │   └── database/           # 数据库集成
-└── pnpm-workspace.yaml     # Workspace 配置
+├── prisma/                 # 数据库 Schema
+├── dist/                   # 构建输出
+├── docker/                 # Docker 配置
+└── docs/                   # 项目文档
 ```
 
 ## 🛠️ 后端技术栈

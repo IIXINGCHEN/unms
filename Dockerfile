@@ -8,9 +8,8 @@ RUN npm install -g pnpm@9.15.4
 WORKDIR /app
 
 # 复制 package 文件
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/api/package.json ./apps/api/
-COPY packages/*/package.json ./packages/*/
+COPY package.json ./
+COPY pnpm-lock.yaml* ./
 
 # 安装依赖
 RUN pnpm install --frozen-lockfile --prod
@@ -42,15 +41,11 @@ WORKDIR /app
 
 # 复制 package 文件
 COPY --from=base /app/package.json ./
-COPY --from=base /app/pnpm-workspace.yaml ./
-COPY --from=base /app/apps/api/package.json ./apps/api/
-COPY --from=base /app/packages/*/package.json ./packages/*/
 
 # 复制构建产物
-COPY --from=builder --chown=unm:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=unm:nodejs /app/packages/*/dist ./packages/*/dist
-COPY --from=builder --chown=unm:nodejs /app/packages/database/prisma ./packages/database/prisma
-COPY --from=builder --chown=unm:nodejs /app/packages/database/src/generated ./packages/database/src/generated
+COPY --from=builder --chown=unm:nodejs /app/dist ./dist
+COPY --from=builder --chown=unm:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=unm:nodejs /app/src/database/generated ./src/database/generated
 
 # 复制必要的配置文件
 COPY --from=builder --chown=unm:nodejs /app/.env.example ./

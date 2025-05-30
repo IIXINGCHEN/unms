@@ -4,35 +4,47 @@
   "description": "纯后端音乐API服务 - 高性能生产环境版本",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
   "packageManager": "pnpm@9.15.4",
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "build": "pnpm -r build",
-    "start": "pnpm -r start",
-    "db:generate": "pnpm --filter @unm/database db:generate",
-    "db:push": "pnpm --filter @unm/database db:push",
-    "db:migrate": "pnpm --filter @unm/database db:migrate",
+    "build": "tsc",
+    "start": "node dist/api/index.js",
+    "db:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "db:push": "prisma db push --schema=./prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema=./prisma/schema.prisma",
     "docker:build": "docker build -t unm-server-v2 .",
     "docker:run": "docker run -p 5678:5678 unm-server-v2"
   },
   "keywords": [
     "music-api",
     "unm-server",
-    "bun",
     "hono",
     "typescript",
-    "production"
+    "production",
+    "api",
+    "music",
+    "backend"
   ],
   "author": "UNM-Server Team",
   "license": "MIT",
-  "devDependencies": {
-    "tsc-alias": "^1.8.16"
+  "dependencies": {
+    "@hono/node-server": "^1.8.0",
+    "@hono/zod-validator": "^0.2.2",
+    "@prisma/client": "^5.7.1",
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.10.9",
+    "bcrypt": "^6.0.0",
+    "hono": "^4.0.0",
+    "node-cache": "^5.1.2",
+    "pg": "^8.11.3",
+    "prisma": "^5.7.1",
+    "redis": "^4.6.0",
+    "typescript": "^5.3.3",
+    "zod": "^3.22.4"
   }
 }
