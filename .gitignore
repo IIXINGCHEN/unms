@@ -59,6 +59,15 @@ tsconfig-paths.json
 **/start.mjs
 **/tsconfig-paths.json
 
+# Development scripts (non-production)
+scripts/check-env.js
+scripts/validate-env-consistency.js
+scripts/security-audit.sh
+
+# Docker files (if not needed in production)
+docker-compose.yml
+nginx.conf
+
 # Prisma generated files
 packages/database/src/generated/
 

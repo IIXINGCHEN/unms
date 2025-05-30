@@ -2,30 +2,6 @@
   "version": 2,
   "name": "unm-server-v2",
   "description": "UNM-Server V2 - 纯后端音乐API服务",
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb",
-        "runtime": "nodejs20.x"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/health",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
-    }
-  ],
   "functions": {
     "api/index.js": {
       "maxDuration": 30
