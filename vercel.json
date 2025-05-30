@@ -44,26 +44,55 @@
   "buildCommand": "pnpm run build:vercel",
   "outputDirectory": "dist",
   "framework": null,
-  "regions": ["hkg1", "sin1", "nrt1"],
+  "regions": [
+    "hkg1",
+    "sin1",
+    "nrt1"
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
         {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         },
         {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
+          "key": "X-Frame-Options",
+          "value": "DENY"
         },
         {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'none'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
         },
         {
           "key": "Cache-Control",
           "value": "s-maxage=300, stale-while-revalidate=60"
+        },
+        {
+          "key": "X-API-Version",
+          "value": "2.0.0"
+        },
+        {
+          "key": "X-Service-Type",
+          "value": "backend-api"
+        }
+      ]
+    },
+    {
+      "source": "/health",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     }

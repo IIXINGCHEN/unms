@@ -87,26 +87,27 @@ export const cacheMiddleware = (options: CacheMiddlewareOptions = {}): Middlewar
 
       // 缓存响应（仅对成功响应）
       if (c.res.status >= 200 && c.res.status < 300) {
-        const responseBody = await c.res.text();
-        const responseHeaders: Record<string, string> = {};
+        try {
+          // 克隆响应以避免消费原始响应体
+          const responseClone = c.res.clone();
+          const responseBody = await responseClone.text();
+          const responseHeaders: Record<string, string> = {};
 
-        // 收集响应头
-        c.res.headers.forEach((value, key) => {
-          responseHeaders[key] = value;
-        });
+          // 收集响应头
+          c.res.headers.forEach((value, key) => {
+            responseHeaders[key] = value;
+          });
 
-        // 缓存响应
-        await cache.set(cacheKey, {
-          status: c.res.status,
-          headers: responseHeaders,
-          body: responseBody,
-        }, ttl);
-
-        // 重新创建响应
-        return new Response(responseBody, {
-          status: c.res.status,
-          headers: c.res.headers,
-        });
+          // 缓存响应
+          await cache.set(cacheKey, {
+            status: c.res.status,
+            headers: responseHeaders,
+            body: responseBody,
+          }, ttl);
+        } catch (error) {
+          console.error('缓存响应失败:', error);
+          // 缓存失败不影响正常响应
+        }
       }
     } catch (error) {
       console.error('缓存中间件错误:', error);

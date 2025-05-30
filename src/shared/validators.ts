@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { REGEX, MUSIC_SOURCES, AUDIO_QUALITY, IMAGE_SIZES, SEARCH_TYPES } from './constants';
+import { REGEX, MUSIC_SOURCES, AUDIO_QUALITY, IMAGE_SIZES, SEARCH_TYPES } from './constants.js';
 
 /**
  * 基础验证器

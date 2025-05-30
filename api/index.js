@@ -1,10 +1,12 @@
-// Vercel 适配入口文件
+// ===========================================
+// UNM-Server V2 Vercel 部署入口文件
+// ===========================================
+
 import { Hono } from 'hono';
 import { handle } from 'hono/vercel';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
-import { secureHeaders } from 'hono/secure-headers';
 
 // 导入配置和工具
 import {
@@ -29,9 +31,10 @@ import { unmRoutes } from '../dist/api/routes/unm.js';
 
 // 导入中间件
 import { errorHandler } from '../dist/api/middleware/error-handler.js';
-import { rateLimiter } from '../dist/api/middleware/rate-limiter.js';
 import { requestId } from '../dist/api/middleware/request-id.js';
-import { securityMiddleware } from '../dist/api/middleware/security.js';
+import { securityHeaders, apiSecurity } from '../dist/api/middleware/security.js';
+import { redisRateLimiter, RateLimitPresets } from '../dist/api/middleware/redis-rate-limiter.js';
+import { cacheStatsMiddleware } from '../dist/api/middleware/cache.js';
 
 // 创建 Hono 应用
 const app = new Hono().basePath('/');
@@ -43,42 +46,45 @@ try {
   checkConfigCompatibility();
 } catch (error) {
   console.error('环境配置验证失败:', error);
-  process.exit(1);
+  // Vercel 环境下不能使用 process.exit，改为抛出错误
+  throw new Error(`环境配置验证失败: ${error.message}`);
 }
 
 // 加载配置
 const configs = loadAllConfigs();
-const { app: appConfig, cache: cacheConfig } = configs;
+const { app: appConfig, cache: cacheConfig, redis: redisConfig } = configs;
 
-// 初始化缓存
-if (cacheConfig.enabled) {
-  try {
-    const cacheManager = CacheManager.getInstance();
-    await cacheManager.initialize(cacheConfig);
-    appLogger.info('缓存系统初始化成功', { type: cacheManager.getType() });
-  } catch (error) {
-    appLogger.warn('缓存初始化失败，将禁用缓存功能', error);
-  }
-}
+// 初始化缓存系统
+const cacheService = CacheFactory.createCache(
+  cacheConfig.enabled ? redisConfig : undefined,
+  { stdTTL: cacheConfig.defaultTTL }
+);
+CacheManager.getInstance().initialize(cacheService);
 
 // 基础中间件
 app.use('*', logger());
-app.use('*', requestId);
-app.use('*', secureHeaders());
+app.use('*', requestId());
+app.use('*', securityHeaders());
+app.use('*', cacheStatsMiddleware());
 
-// CORS 配置
+// CORS 配置 - 生产环境使用严格配置
+const corsOrigin = appConfig.isProduction && appConfig.allowedDomain !== '*'
+  ? appConfig.allowedDomain.split(',').map(domain => domain.trim())
+  : '*';
+
 app.use('*', cors({
-  origin: appConfig.allowedDomain,
+  origin: corsOrigin,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: corsOrigin !== '*',
 }));
 
-// 安全中间件
-app.use('*', securityMiddleware);
+// 速率限制 - 使用 Redis 分布式限制器
+app.use('*', redisRateLimiter(RateLimitPresets.global));
 
-// 速率限制
-app.use('/api/*', rateLimiter);
+// API路由 - 添加API特定的安全和速率限制
+app.use('/api/*', apiSecurity());
+app.use('/api/*', redisRateLimiter(RateLimitPresets.api));
 
 // JSON 美化 (仅开发环境)
 if (!appConfig.isProduction) {
@@ -90,15 +96,17 @@ app.get('/health', async (c) => {
   try {
     const cacheManager = CacheManager.getInstance();
     const cacheStatus = await cacheManager.getStatus();
-    
+
     const healthData = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       version: '2.0.0',
       environment: appConfig.nodeEnv,
+      platform: 'vercel',
       cache: cacheStatus,
       uptime: process.uptime(),
       memory: process.memoryUsage(),
+      cors: sanitizeLog(appConfig.allowedDomain),
     };
 
     return c.json(createSuccessResponse(healthData, '服务运行正常'));

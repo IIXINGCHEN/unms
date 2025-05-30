@@ -1,0 +1,36 @@
+# 生产环境 PNPM 配置 - 使用中国镜像源
+registry=https://registry.npmmirror.com/
+# 备用镜像源配置
+@types:registry=https://registry.npmmirror.com/
+@hono:registry=https://registry.npmmirror.com/
+@prisma:registry=https://registry.npmmirror.com/
+
+# 启用锁文件以确保依赖版本一致性和安全性
+package-lock=true
+# 注意：中国镜像源不支持安全审计，需要手动使用官方源进行审计
+audit=false
+loglevel=warn
+progress=false
+fund=false
+
+# 启用严格的依赖解析
+strict-peer-dependencies=true
+# 启用 shamefully-hoist 以兼容某些包
+shamefully-hoist=false
+# 启用 node-linker 为 isolated 以提高安全性
+node-linker=isolated
+
+# 中国镜像源加速配置
+disturl=https://npmmirror.com/mirrors/node/
+chromedriver_cdnurl=https://npmmirror.com/mirrors/chromedriver/
+operadriver_cdnurl=https://npmmirror.com/mirrors/operadriver/
+phantomjs_cdnurl=https://npmmirror.com/mirrors/phantomjs/
+selenium_cdnurl=https://npmmirror.com/mirrors/selenium/
+node_inspector_cdnurl=https://npmmirror.com/mirrors/node-inspector/
+
+# 网络配置优化
+network-timeout=300000
+fetch-retries=3
+fetch-retry-factor=10
+fetch-retry-mintimeout=10000
+fetch-retry-maxtimeout=60000
