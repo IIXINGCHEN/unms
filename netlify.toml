@@ -1,7 +1,7 @@
 [build]
-  publish = "dist"
-  command = "echo 'Netlify Functions build complete'"
+  command = "mkdir -p dist && echo 'Build complete' > dist/index.html"
   functions = "netlify/functions"
+  publish = "dist"
 
 [build.environment]
   NODE_ENV = "production"
