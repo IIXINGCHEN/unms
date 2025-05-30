@@ -1,16 +1,20 @@
 # UNM-Server V2
 
-现代化音乐API服务 - 基于 Bun + Hono + TypeScript 的高性能重构版本
+🎵 **纯后端音乐API服务** - 基于 Hono + TypeScript 的高性能音乐数据接口
 
-## 🚀 特性
+> **注意**: 这是一个纯后端API服务，不包含任何前端界面。专注于提供稳定、高性能的音乐数据API接口。
 
-- **高性能运行时**: 基于 Bun 的极速 JavaScript 运行时
-- **现代Web框架**: 使用 Hono 轻量级高性能框架
-- **类型安全**: 完整的 TypeScript 支持
-- **Monorepo架构**: pnpm workspaces 管理多包项目
-- **生产级缓存**: Redis + 内存缓存双重降级
-- **数据库集成**: Prisma ORM + PostgreSQL
-- **真实API集成**: 支持网易云音乐、QQ音乐等多平台
+## 🚀 核心特性
+
+- **🎯 纯后端架构**: 专注于API服务，无前端依赖
+- **⚡ 高性能框架**: 基于 Hono 轻量级高性能Web框架
+- **🔒 类型安全**: 完整的 TypeScript 支持
+- **📦 Monorepo架构**: pnpm workspaces 管理多包项目
+- **🚀 生产级缓存**: Redis + 内存缓存双重降级
+- **🗄️ 数据库集成**: Prisma ORM + PostgreSQL (可选)
+- **🎵 多平台支持**: 支持网易云音乐、QQ音乐等多平台数据源
+- **🔧 服务开关**: 灵活的服务启用/禁用配置
+- **🛡️ 安全加固**: 完整的生产环境安全措施
 
 ## 📦 项目结构
 
@@ -24,14 +28,15 @@
 └── pnpm-workspace.yaml     # Workspace 配置
 ```
 
-## 🛠️ 技术栈
+## 🛠️ 后端技术栈
 
-- **Runtime**: Bun
-- **Web Framework**: Hono
-- **Language**: TypeScript
-- **Database**: Prisma + PostgreSQL
-- **Cache**: Redis + Memory
-- **Package Manager**: pnpm
+- **🌐 Web Framework**: Hono (轻量级高性能)
+- **📝 Language**: TypeScript (类型安全)
+- **🗄️ Database**: Prisma ORM + PostgreSQL (可选)
+- **⚡ Cache**: Redis + Memory (双重降级)
+- **📦 Package Manager**: pnpm (高效依赖管理)
+- **🐳 Deployment**: Docker + Docker Compose
+- **🔧 Runtime**: Node.js 20+ (生产稳定)
 
 ## 🚀 快速开始
 
@@ -84,17 +89,28 @@ pnpm start
 
 API 服务将在 http://localhost:5678 启动
 
-## 📚 API 文档
+## 📚 API 接口文档
 
-访问 http://localhost:5678/docs 查看完整的API文档
+> **纯后端API服务** - 所有接口返回JSON格式数据，适合各种客户端集成
 
-### 主要端点
+### 🔗 API 端点
 
-- `GET /health` - 健康检查
-- `GET /api/music/search` - 音乐搜索
-- `GET /api/music/url` - 获取音乐URL
-- `GET /api/music/lyric` - 获取歌词
-- `GET /api/music/pic` - 获取封面
+| 端点 | 方法 | 描述 | 响应格式 |
+|------|------|------|----------|
+| `/health` | GET | 服务健康检查 | JSON |
+| `/health/detailed` | GET | 详细健康状态 | JSON |
+| `/api` | GET | API基本信息 | JSON |
+| `/api/info` | GET | API详细信息 | JSON |
+| `/api/music/search` | GET | 音乐搜索接口 | JSON |
+| `/api/music/url` | GET | 获取音乐播放URL | JSON |
+| `/api/music/lyric` | GET | 获取歌词数据 | JSON |
+| `/api/music/pic` | GET | 获取封面图片URL | JSON |
+
+### 📖 接口文档
+
+- **在线文档**: `http://localhost:5678/docs` (如果启用)
+- **API信息**: `http://localhost:5678/api`
+- **健康检查**: `http://localhost:5678/health`
 
 ## 🔧 配置
 

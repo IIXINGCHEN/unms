@@ -1,7 +1,7 @@
 {
   "name": "unm-server-v2",
   "version": "2.0.0",
-  "description": "现代化音乐API服务 - 生产环境版本",
+  "description": "纯后端音乐API服务 - 高性能生产环境版本",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",

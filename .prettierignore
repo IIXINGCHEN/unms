@@ -1,11 +1,21 @@
+# 依赖和构建输出
 node_modules
 dist
-.nuxt
-.output
 coverage
+
+# 日志文件
 *.log
+
+# 环境变量文件
 .env*
-public/assets
+
+# 包管理器锁文件
+pnpm-lock.yaml
+
+# Docker 相关
+Dockerfile*
+docker-compose*.yml
+
+# 生产环境文件
 *.min.js
 *.min.css
-pnpm-lock.yaml
