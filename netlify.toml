@@ -21,8 +21,6 @@
 [functions]
   # 函数运行时目录
   directory = "netlify/functions"
-  # 包含的文件模式
-  included_files = ["config/**", "routes/**", "node_modules/**"]
 
 # 重定向规则
 [[redirects]]
