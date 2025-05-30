@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build:netlify": "echo 'Netlify build completed'"
   },
   "author": "imsyy",
   "license": "MIT",
@@ -25,7 +26,8 @@
     "koa-static": "^5.0.0",
     "koa-views": "^8.1.0",
     "koa2-cors": "^2.0.6",
-    "node-cache": "^5.1.2"
+    "node-cache": "^5.1.2",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
