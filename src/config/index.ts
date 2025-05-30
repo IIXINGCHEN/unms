@@ -66,15 +66,17 @@ export function loadAppConfig(): AppConfig {
 
     if (allowedDomainStr === '*') {
       allowedDomain = '*';
-    } else {
-      const domains = allowedDomainStr.split(',').map(domain => domain.trim());
+    } else if (allowedDomainStr && allowedDomainStr.trim()) {
+      const domains = allowedDomainStr.split(',').map(domain => domain.trim()).filter(domain => domain);
       // 验证域名格式
       domains.forEach(domain => {
         if (!isValidDomain(domain)) {
           throw new Error(`无效的域名配置: ${domain}`);
         }
       });
-      allowedDomain = domains;
+      allowedDomain = domains.length > 0 ? domains : '*';
+    } else {
+      allowedDomain = '*';
     }
 
     const config: AppConfig = {

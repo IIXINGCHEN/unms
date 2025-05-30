@@ -67,7 +67,7 @@ app.use('*', cacheStatsMiddleware());
 
 // CORS 配置 - 生产环境使用严格配置
 const corsOrigin = appConfig.isProduction && appConfig.allowedDomain !== '*'
-  ? appConfig.allowedDomain.split(',').map(domain => domain.trim())
+  ? (Array.isArray(appConfig.allowedDomain) ? appConfig.allowedDomain : [appConfig.allowedDomain])
   : '*';
 
 app.use('*', cors({
