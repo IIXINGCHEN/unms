@@ -9,7 +9,7 @@ const { logger } = require('hono/logger');
 const { prettyJSON } = require('hono/pretty-json');
 
 // 创建 Hono 应用
-const app = new Hono().basePath('/');
+const app = new Hono();
 
 // 简化的环境配置
 const nodeEnv = process.env.NODE_ENV || 'production';
@@ -150,4 +150,23 @@ app.onError((error, c) => {
 });
 
 // 导出 Netlify Functions 处理函数
-exports.handler = handle(app);
+exports.handler = async (event, context) => {
+  try {
+    return await handle(app)(event, context);
+  } catch (error) {
+    console.error('Netlify Function Error:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({
+        code: 500,
+        message: '服务器内部错误',
+        error: error.message,
+        timestamp: Date.now(),
+      }),
+    };
+  }
+};
