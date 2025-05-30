@@ -3,6 +3,10 @@
   "version": "2.0.0",
   "description": "UNM-Server V2 Netlify Functions",
   "main": "api.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "hono": "^4.7.10"
   }
