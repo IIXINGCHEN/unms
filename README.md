@@ -44,9 +44,34 @@
 - **🐳 Deployment**: Docker + Docker Compose
 - **🔧 Runtime**: Node.js 20+ (生产稳定)
 
-## 🚀 快速开始
+## 🚀 快速部署
 
-### 环境要求
+### 一键部署到云平台
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FIIXINGCHEN%2FUNM-Server&branch=v2-production-ready&env=NODE_ENV,ALLOWED_DOMAIN,JWT_SECRET&envDescription=UNM-Server%20V2%20%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE&envLink=https%3A%2F%2Fgithub.com%2FIIXINGCHEN%2FUNM-Server%2Fblob%2Fv2-production-ready%2F.env.vercel&project-name=unm-server-v2&repository-name=unm-server-v2)
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/IIXINGCHEN/UNM-Server&branch=v2-production-ready)
+
+### 🔗 平台选择指南
+
+| 特性 | Vercel | Netlify |
+|------|--------|---------|
+| **适用场景** | 高性能API服务 | 快速原型部署 |
+| **全球CDN** | ✅ 优秀 | ✅ 良好 |
+| **冷启动** | ⚡ 极快 | 🔄 较快 |
+| **数据库推荐** | PlanetScale/Neon | Supabase |
+| **缓存推荐** | Upstash Redis | 内存缓存 |
+| **免费额度** | 100GB带宽 | 100GB带宽 |
+| **部署速度** | 🚀 极快 | 🚀 快速 |
+
+### 📋 部署前准备
+
+1. **Fork 本仓库** 到你的 GitHub 账户
+2. **选择部署平台** (推荐 Vercel 用于生产环境)
+3. **准备环境变量** (参考 `.env.vercel` 或 `.env.netlify`)
+4. **点击部署按钮** 开始自动部署
+
+### 本地开发环境要求
 
 - Node.js >= 20.0.0
 - pnpm >= 9.0.0
@@ -94,6 +119,50 @@ pnpm start
 ```
 
 API 服务将在 http://localhost:5678 启动
+
+## 🔧 部署后配置
+
+### Vercel 部署后设置
+
+1. **配置环境变量**
+   ```bash
+   # 在 Vercel Dashboard 中设置
+   NODE_ENV=production
+   ALLOWED_DOMAIN=https://your-domain.vercel.app
+   JWT_SECRET=your-super-secret-key
+   DATABASE_URL=your-database-connection-string
+   REDIS_URL=your-redis-connection-string
+   ```
+
+2. **推荐服务配置**
+   - 数据库: [PlanetScale](https://planetscale.com) 或 [Neon](https://neon.tech)
+   - 缓存: [Upstash Redis](https://upstash.com)
+   - 域名: 在 Vercel Dashboard 配置自定义域名
+
+### Netlify 部署后设置
+
+1. **配置环境变量**
+   ```bash
+   # 在 Netlify Dashboard 中设置
+   NODE_ENV=production
+   ALLOWED_DOMAIN=https://your-site.netlify.app
+   JWT_SECRET=your-super-secret-key
+   DATABASE_URL=your-database-connection-string
+   REDIS_ENABLED=false  # 推荐使用内存缓存
+   ```
+
+2. **推荐服务配置**
+   - 数据库: [Supabase](https://supabase.com) 或 [PlanetScale](https://planetscale.com)
+   - 缓存: 内存缓存 (已内置)
+   - 域名: 在 Netlify Dashboard 配置自定义域名
+
+### 🧪 部署验证
+
+部署完成后，访问以下端点验证服务状态：
+
+- **健康检查**: `https://your-domain/health`
+- **API 信息**: `https://your-domain/api`
+- **API 文档**: `https://your-domain/api/docs`
 
 ## 📚 API 接口文档
 

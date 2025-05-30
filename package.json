@@ -12,12 +12,16 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:vercel": "pnpm db:generate && tsc",
+    "build:netlify": "pnpm db:generate && tsc && cp -r dist netlify/functions/",
     "start": "node dist/api/index.js",
     "db:generate": "prisma generate --schema=./prisma/schema.prisma",
     "db:push": "prisma db push --schema=./prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema=./prisma/schema.prisma",
     "docker:build": "docker build -t unm-server-v2 .",
-    "docker:run": "docker run -p 5678:5678 unm-server-v2"
+    "docker:run": "docker run -p 5678:5678 unm-server-v2",
+    "deploy:vercel": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod"
   },
   "keywords": [
     "music-api",
