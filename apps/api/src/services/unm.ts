@@ -1,6 +1,6 @@
-import type { SongUrl, MusicSource } from '../../../../packages/shared/dist/index.js';
-import { loadAllConfigs } from '../../../../packages/config/dist/index.js';
-import { CacheManager, generateCacheKey } from '../../../../packages/shared/dist/index.js';
+import type { SongUrl, MusicSource } from '@unm/shared';
+import { loadAllConfigs } from '@unm/config';
+import { CacheManager, generateCacheKey } from '@unm/shared';
 
 const configs = loadAllConfigs();
 

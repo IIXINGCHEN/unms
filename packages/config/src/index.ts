@@ -12,6 +12,17 @@ import {
   type RedisConfig,
 } from '@unm/shared';
 
+// 导出验证函数
+export { validateEnvironment, validateProductionRequirements, checkConfigCompatibility } from './validation';
+
+/**
+ * 验证域名格式
+ */
+function isValidDomain(domain: string): boolean {
+  const domainRegex = /^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  return domainRegex.test(domain);
+}
+
 // 环境配置验证Schema
 const EnvConfigSchema = z.object({
   NODE_ENV: z
@@ -47,15 +58,23 @@ export function loadAppConfig(): AppConfig {
 
     // 处理域名配置
     let allowedDomain: string | string[];
+
+    // 强制生产环境域名验证
+    if (allowedDomainStr === '*' && nodeEnv === 'production') {
+      throw new Error('生产环境不允许使用通配符 CORS 配置，请设置具体域名');
+    }
+
     if (allowedDomainStr === '*') {
       allowedDomain = '*';
-      if (nodeEnv === 'production') {
-        console.warn(
-          '[配置警告] 在生产环境中使用 ALLOWED_DOMAIN="*" 可能存在安全风险'
-        );
-      }
     } else {
-      allowedDomain = allowedDomainStr.split(',').map(domain => domain.trim());
+      const domains = allowedDomainStr.split(',').map(domain => domain.trim());
+      // 验证域名格式
+      domains.forEach(domain => {
+        if (!isValidDomain(domain)) {
+          throw new Error(`无效的域名配置: ${domain}`);
+        }
+      });
+      allowedDomain = domains;
     }
 
     const config: AppConfig = {
@@ -71,7 +90,7 @@ export function loadAppConfig(): AppConfig {
     };
 
     // 验证配置
-    const validatedEnv = EnvConfigSchema.parse({
+    EnvConfigSchema.parse({
       NODE_ENV: nodeEnv,
       PORT: port,
       ALLOWED_DOMAIN: allowedDomainStr,

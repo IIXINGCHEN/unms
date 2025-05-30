@@ -1,5 +1,5 @@
-import type { SongUrl, SearchResult, PicInfo, Lyric, MusicSource } from '../../../../packages/shared/dist/index.js';
-import { loadAllConfigs } from '../../../../packages/config/dist/index.js';
+import type { SongUrl, SearchResult, PicInfo, Lyric, MusicSource } from '@unm/shared';
+import { loadAllConfigs } from '@unm/config';
 
 const configs = loadAllConfigs();
 

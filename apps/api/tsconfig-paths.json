@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "paths": {
+      "@unm/shared": [
+        "../../packages/shared/dist/index.js"
+      ],
+      "@unm/config": [
+        "../../packages/config/dist/index.js"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  }
+}

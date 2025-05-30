@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { REGEX, MUSIC_SOURCES, AUDIO_QUALITY, IMAGE_SIZES, SEARCH_TYPES } from './constants.js';
+import { REGEX, MUSIC_SOURCES, AUDIO_QUALITY, IMAGE_SIZES, SEARCH_TYPES } from './constants';
 
 /**
  * 基础验证器
@@ -81,9 +81,9 @@ export const PicValidator = z.object({
 // 匹配参数验证
 export const MatchValidator = z.object({
   id: StringValidators.songId,
-  sources: z.string().optional().transform((val) => {
+  sources: z.string().optional().transform((val: string | undefined) => {
     if (!val) return undefined;
-    return val.split(',').map(s => s.trim()).filter(Boolean);
+    return val.split(',').map((s: string) => s.trim()).filter(Boolean);
   }),
 });
 
@@ -190,10 +190,10 @@ export function validateAndTransform<T>(
 ): T {
   try {
     return schema.parse(data);
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       const message = errorMessage || '数据验证失败';
-      const details = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      const details = error.errors.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`).join(', ');
       throw new Error(`${message}: ${details}`);
     }
     throw error;
@@ -213,7 +213,7 @@ export function validateBatch<T>(
   dataArray.forEach((data, index) => {
     const result = safeValidate(schema, data);
     if (result.success) {
-      valid.push(result.data);
+      valid.push(result.data as T);
     } else {
       invalid.push({ index, data, error: result.error });
     }

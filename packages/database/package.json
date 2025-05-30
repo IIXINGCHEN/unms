@@ -13,28 +13,19 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy",
-    "db:reset": "prisma migrate reset",
-    "db:seed": "tsx src/seed.ts",
-    "db:studio": "prisma studio"
+    "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
     "@types/bcrypt": "^5.0.2",
+    "@types/pg": "^8.10.9",
     "@unm/shared": "workspace:*",
     "bcrypt": "^6.0.0",
     "pg": "^8.11.3",
-    "prisma": "^5.7.1"
-  },
-  "devDependencies": {
-    "@types/pg": "^8.10.9",
-    "tsx": "^4.6.2",
+    "prisma": "^5.7.1",
     "typescript": "^5.3.3"
   },
   "files": [

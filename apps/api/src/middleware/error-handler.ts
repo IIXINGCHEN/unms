@@ -1,9 +1,23 @@
 import type { ErrorHandler } from 'hono';
 
-import { ApiError, createErrorResponse } from '../../../../packages/shared/dist/index.js';
+import { ApiError, createErrorResponse, logger } from '@unm/shared';
 
 export const errorHandler: ErrorHandler = (err, c) => {
-  console.error('API Error:', err);
+  const requestId = c.get('requestId');
+  const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
+  const userAgent = c.req.header('user-agent');
+  const method = c.req.method;
+  const url = c.req.url;
+
+  // 记录错误日志
+  logger.error('API错误', err, {
+    requestId,
+    ip,
+    userAgent,
+    method,
+    endpoint: url,
+    errorType: err.constructor.name
+  });
 
   // 如果是自定义API错误
   if (err instanceof ApiError) {
@@ -15,6 +29,13 @@ export const errorHandler: ErrorHandler = (err, c) => {
   // 如果是Zod验证错误
   if (err.name === 'ZodError') {
     const zodError = err as any;
+    logger.warn('参数验证失败', {
+      requestId,
+      ip,
+      endpoint: url,
+      validationErrors: zodError.issues || zodError.errors
+    });
+
     return c.json(
       createErrorResponse('请求参数验证失败', 400, {
         validation_errors: zodError.issues || zodError.errors,

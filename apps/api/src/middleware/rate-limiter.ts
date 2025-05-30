@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 
-import { createErrorResponse } from '../../../../packages/shared/dist/index.js';
+import { createErrorResponse } from '@unm/shared';
 
 interface RateLimitConfig {
   windowMs: number; // 时间窗口（毫秒）

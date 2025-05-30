@@ -1,8 +1,8 @@
 import { createClient, RedisClientType } from 'redis';
 import NodeCache from 'node-cache';
 
-import type { CacheService, CacheStats, RedisConfig } from './types.js';
-import { LogLevel } from './types.js';
+import type { CacheService, CacheStats, RedisConfig } from './types';
+import { LogLevel } from './types';
 
 /**
  * Redis缓存服务实现

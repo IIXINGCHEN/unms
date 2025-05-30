@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import { createSuccessResponse } from '../../../../packages/shared/dist/index.js';
+import { createSuccessResponse } from '@unm/shared';
 
 import { musicRoutes } from './music.js';
 import { unmRoutes } from './unm.js';
@@ -37,7 +37,7 @@ apiRoutes.get('/', (c) => {
 
 // 详细信息路由
 apiRoutes.get('/info', async (c) => {
-  const configModule = await import('../../../../packages/config/dist/index.js');
+  const configModule = await import('@unm/config');
   const configs = configModule.loadAllConfigs();
 
   const infoPayload = {
