@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "^/assets/(.*)",
+      "dest": "/public/assets/$1"
+    },
+    {
       "src": "^/favicon\\.png$",
       "dest": "/public/favicon.png"
     },
@@ -22,6 +26,10 @@
     {
       "src": "^/script\\.js$",
       "dest": "/public/script.js"
+    },
+    {
+      "src": "^/style\\.css$",
+      "dest": "/public/style.css"
     },
     {
       "src": "^/(match|url|search|pic|lyric|info|test)(\\?.*)?$",
