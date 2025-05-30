@@ -1,7 +1,26 @@
 // 引入 Koa Router 模块，用于创建路由
 const Router = require("koa-router");
-// 引入 @unblockneteasemusic/server 模块，用于匹配和获取音乐链接
-const match = require("@unblockneteasemusic/server");
+
+// 安全加载 @unblockneteasemusic/server 模块，用于匹配和获取音乐链接
+let match = null;
+let unmAvailable = false;
+
+try {
+    // 检查环境变量中的 UNM 可用性状态
+    if (process.env.UNM_AVAILABLE === 'true') {
+        match = require("@unblockneteasemusic/server");
+        unmAvailable = true;
+    } else {
+        throw new Error("UNM module marked as unavailable");
+    }
+} catch (error) {
+    console.warn("UNM module not available in current environment:", error.message);
+    unmAvailable = false;
+    // 创建一个模拟的 match 函数，返回错误信息
+    match = async () => {
+        throw new Error("UNM service is not available in this deployment environment");
+    };
+}
 
 // 引入 package.json 文件。
 // 注意：此路径 "./package.json" 假设 router.js 与 package.json 在项目的同一根目录下。
@@ -214,11 +233,11 @@ async function performApiCallWithFallback(ctx, initialApiParams, processDataFn, 
         if (cacheService.CACHE_ENABLED && cacheKey && responseData) {
             // 在缓存前，确保 responseData 中包含 source 字段，以便缓存命中时能正确显示来源
             if (typeof responseData === 'object' && responseData !== null && !responseData.source && initialApiParams.source) {
-                 if (Array.isArray(responseData)) { // 如果响应数据是数组 (如搜索结果)
+                if (Array.isArray(responseData)) { // 如果响应数据是数组 (如搜索结果)
                     responseData.forEach(item => item.source = initialApiParams.source); // 为数组中每个对象添加 source
-                 } else { // 如果响应数据是单个对象
+                } else { // 如果响应数据是单个对象
                     responseData.source = initialApiParams.source; // 直接添加 source
-                 }
+                }
             }
             // 将处理后的数据存入缓存
             cacheService.set(cacheKey, responseData);
@@ -250,15 +269,15 @@ async function performApiCallWithFallback(ctx, initialApiParams, processDataFn, 
                     // 在缓存前，确保 responseData 中包含 source 字段 (此时为回退源)
                     if (typeof responseData === 'object' && responseData !== null && !responseData.source) {
                         if (Array.isArray(responseData)) { // 处理数组情况
-                           responseData.forEach(item => item.source = API_CONFIG.fallbackSource);
+                            responseData.forEach(item => item.source = API_CONFIG.fallbackSource);
                         } else { // 处理单个对象情况
-                           responseData.source = API_CONFIG.fallbackSource;
+                            responseData.source = API_CONFIG.fallbackSource;
                         }
-                   }
+                    }
                     // 将回退源的结果存入缓存，使用原始请求的 cacheKey
-                    cacheService.set(cacheKey, responseData); 
+                    cacheService.set(cacheKey, responseData);
                 }
-                
+
                 // 如果需要对回退源结果应用代理
                 if (applyProxy && responseData.url) {
                     const proxiedUrl = generateProxyUrl(responseData.url);
@@ -272,7 +291,7 @@ async function performApiCallWithFallback(ctx, initialApiParams, processDataFn, 
                 // 如果回退尝试也失败，记录错误
                 console.error(`Fallback to '${API_CONFIG.fallbackSource}' (API type: ${initialApiParams.types}) failed:`, fallbackError.message);
                 // 使用原始主源的错误信息和音源来处理 API 错误（向客户端报告原始尝试的失败）
-                handleApiError(ctx, error, originalSource); 
+                handleApiError(ctx, error, originalSource);
             }
         } else {
             // 如果错误类型不适合回退，或者原始源就是回退源，则直接处理错误
@@ -372,7 +391,7 @@ function validatePositiveIntParam(ctx, value, paramName) {
  * @param {object} matchResult - match() 函数的原始返回结果
  * @returns {object | null} - 清理后的、适合客户端的数据对象，或在结果无效时返回 null
  */
-function sanitizeUnmResult(matchResult) { 
+function sanitizeUnmResult(matchResult) {
     // 检查 matchResult 是否为有效对象且包含 URL
     if (typeof matchResult !== 'object' || matchResult === null || !matchResult.url) {
         console.warn('Invalid or incomplete result from match:', matchResult); // 记录无效结果的警告
@@ -387,7 +406,7 @@ function sanitizeUnmResult(matchResult) {
         md5: matchResult.md5, // MD5 哈希值 (可能存在)
         // 新增：尝试从 matchResult 中获取音源信息。
         // 此字段的可用性取决于 @unblockneteasemusic/server 的 match() 函数是否在其结果中提供 'source' 属性。
-        source: matchResult.source 
+        source: matchResult.source
     };
 }
 
@@ -437,6 +456,17 @@ router.get("/info", async (ctx) => {
 
 // 定义 "/test" 路径的 GET 请求处理器，用于测试 UNM 的 match 功能
 router.get("/test", async (ctx) => {
+    // 检查 UNM 模块是否可用
+    if (!unmAvailable) {
+        setErrorResponse(ctx, "UNM 服务在当前部署环境中不可用。这通常发生在 Netlify Functions 等 serverless 环境中，因为 @unblockneteasemusic/server 模块可能与这些环境不兼容。请尝试使用其他 API 端点或联系管理员。", 503, {
+            service: "UNM",
+            environment: "Netlify Functions",
+            available_endpoints: ["/url", "/search", "/pic", "/lyric"],
+            suggestion: "请使用 GDStudio API 兼容的端点获取音乐资源"
+        });
+        return;
+    }
+
     // 在非生产环境记录路由开始处理的日志
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[${new Date().toISOString()}] /test route started for ID ${UNM_SETTINGS.testSongId}`);
@@ -463,7 +493,7 @@ router.get("/test", async (ctx) => {
             return; // 直接返回
         }
     }
-    
+
     // 在非生产环境记录将要尝试的音源
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[${new Date().toISOString()}] Attempting to match with sources: ${sourcesToTry.join(', ')}`);
@@ -487,7 +517,7 @@ router.get("/test", async (ctx) => {
             setErrorResponse(ctx, "未能从音源获取有效信息。", 404, null); // 使用标准错误响应
             return; // 返回
         }
-        
+
         // 如果缓存启用、缓存键有效且处理后的数据存在
         if (cacheService.CACHE_ENABLED && testCacheKey && clientData) {
             cacheService.set(testCacheKey, clientData); // 将数据存入缓存
@@ -506,6 +536,17 @@ router.get("/test", async (ctx) => {
 
 // 定义 "/match" 路径的 GET 请求处理器，用于根据 ID 和指定音源匹配歌曲
 router.get("/match", async (ctx) => {
+    // 检查 UNM 模块是否可用
+    if (!unmAvailable) {
+        setErrorResponse(ctx, "UNM 服务在当前部署环境中不可用。这通常发生在 Netlify Functions 等 serverless 环境中，因为 @unblockneteasemusic/server 模块可能与这些环境不兼容。请尝试使用其他 API 端点或联系管理员。", 503, {
+            service: "UNM",
+            environment: "Netlify Functions",
+            available_endpoints: ["/url", "/search", "/pic", "/lyric"],
+            suggestion: "请使用 GDStudio API 兼容的端点获取音乐资源"
+        });
+        return;
+    }
+
     try {
         // 从查询参数中获取歌曲 ID
         const id = ctx.request.query.id;
@@ -533,8 +574,8 @@ router.get("/match", async (ctx) => {
                     console.log(`[Cache HIT] Serving /match from cache for key: ${matchCacheKey}`);
                 }
                 // 重要：克隆缓存数据以防后续修改（如添加 proxyUrl）影响缓存中的原始对象
-                let clientDataForResponse = JSON.parse(JSON.stringify(cachedClientData)); 
-                
+                let clientDataForResponse = JSON.parse(JSON.stringify(cachedClientData));
+
                 // 如果配置了代理 URL，且响应数据中有 URL，且 URL 包含 "kuwo" (特定代理逻辑)
                 if (PROXY_URL_ENV && clientDataForResponse.url && clientDataForResponse.url.includes("kuwo")) {
                     // 生成并添加代理 URL
@@ -560,13 +601,13 @@ router.get("/match", async (ctx) => {
             setErrorResponse(ctx, "未能从音源获取有效信息。", 404, null); // 使用标准错误响应
             return; // 返回
         }
-        
+
         // 如果缓存启用、缓存键有效且处理后的数据存在
         // 注意：缓存的是未经代理修改的 clientData
         if (cacheService.CACHE_ENABLED && matchCacheKey && clientData) {
             cacheService.set(matchCacheKey, clientData); // 将数据存入缓存
         }
-        
+
         // 克隆 clientData 以便进行可能的代理修改，而不影响原始 clientData
         let clientDataForResponse = JSON.parse(JSON.stringify(clientData));
         // 应用特定代理逻辑 (同缓存命中部分)
@@ -577,7 +618,7 @@ router.get("/match", async (ctx) => {
         setSuccessResponse(ctx, clientDataForResponse, "匹配成功");
     } catch (error) {
         // 在服务端记录错误信息
-        console.error("Error during /match:", error.message); 
+        console.error("Error during /match:", error.message);
         // 在非生产环境打印堆栈信息
         if (process.env.NODE_ENV !== 'production' && error.stack) {
             console.error(error.stack);
@@ -605,7 +646,7 @@ router.get("/url", async (ctx) => {
     if (!validateEnumParam(ctx, br, 'br', ["128", "192", "320", "740", "999"])) return;
 
     // 构建初始 API 请求参数对象
-    const initialApiParams = { types: "url", id, source, br }; 
+    const initialApiParams = { types: "url", id, source, br };
     // 定义处理 API 结果的函数
     const processDataFn = (apiResult, currentSourceParam, query) => ({
         id: apiResult.id || query.id, // 使用 API 返回的 ID，或原始查询的 ID 作为备用
@@ -636,7 +677,7 @@ router.get("/search", async (ctx) => {
     // 构建初始 API 请求参数
     const initialApiParams = { types: "search", name, source, count, pages };
     // 定义处理 API 搜索结果的函数
-    const processDataFn = (apiResult, currentSourceParam) => ( 
+    const processDataFn = (apiResult, currentSourceParam) => (
         Array.isArray(apiResult) ? apiResult.map(item => ({ // 如果 API 结果是数组
             id: item.id, // 歌曲 ID
             name: item.name, // 歌曲名
@@ -667,7 +708,7 @@ router.get("/pic", async (ctx) => {
     // 构建初始 API 请求参数
     const initialApiParams = { types: "pic", id, source, size };
     // 定义处理 API 图片结果的函数
-    const processDataFn = (apiResult, currentSourceParam) => ({ 
+    const processDataFn = (apiResult, currentSourceParam) => ({
         url: apiResult.url, // 图片 URL
         // 'source' 字段将由 performApiCallWithFallback 在缓存前添加
     });
@@ -689,7 +730,7 @@ router.get("/lyric", async (ctx) => {
     // 构建初始 API 请求参数
     const initialApiParams = { types: "lyric", id, source };
     // 定义处理 API 歌词结果的函数
-    const processDataFn = (apiResult, currentSourceParam) => ({ 
+    const processDataFn = (apiResult, currentSourceParam) => ({
         lyric: apiResult.lyric, // 原文歌词
         tlyric: apiResult.tlyric, // 翻译歌词 (可能不存在)
         // 'source' 字段将由 performApiCallWithFallback 在缓存前添加
@@ -701,7 +742,7 @@ router.get("/lyric", async (ctx) => {
 
 // --- 404 处理中间件 ---
 // 此中间件将在没有其他路由匹配请求时执行
-router.use(async (ctx) => { 
+router.use(async (ctx) => {
     // 根据客户端接受的内容类型 (Accept header) 返回不同格式的 404 响应
     if (ctx.accepts('html')) { // 如果客户端接受 HTML
         try {
@@ -716,7 +757,7 @@ router.use(async (ctx) => {
         }
     } else { // 如果客户端不接受 HTML (或接受其他如 JSON)
         // 使用 setErrorResponse 设置标准 404 JSON 响应
-        setErrorResponse(ctx, "请求的资源未找到。", 404, null); 
+        setErrorResponse(ctx, "请求的资源未找到。", 404, null);
     }
 });
 
