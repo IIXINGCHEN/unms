@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "name": "unm-server-v2",
-  "description": "UNM-Server V2 - 纯后端音乐API服务",
   "functions": {
     "api/index.js": {
       "maxDuration": 30
@@ -11,15 +9,6 @@
     "NODE_ENV": "production",
     "PORT": "3000"
   },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  },
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm run build:vercel",
-  "outputDirectory": "dist",
-  "framework": null,
   "regions": [
     "hkg1",
     "sin1",
