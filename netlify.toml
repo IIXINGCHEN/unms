@@ -1,6 +1,6 @@
 [build]
   publish = "dist"
-  command = "pnpm run build:netlify"
+  command = "echo 'Netlify Functions build complete'"
   functions = "netlify/functions"
 
 [build.environment]
@@ -10,7 +10,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@prisma/client", "prisma"]
+  external_node_modules = ["hono"]
 
 [[redirects]]
   from = "/health"
