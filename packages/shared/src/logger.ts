@@ -3,7 +3,7 @@
  * 提供生产级别的日志记录功能，包括敏感信息过滤
  */
 
-import { LogLevel } from './types';
+import { LogLevel } from './types.js';
 
 // 扩展日志级别
 export enum ExtendedLogLevel {

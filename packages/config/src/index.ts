@@ -13,7 +13,7 @@ import {
 } from '@unm/shared';
 
 // 导出验证函数
-export { validateEnvironment, validateProductionRequirements, checkConfigCompatibility } from './validation';
+export { validateEnvironment, validateProductionRequirements, checkConfigCompatibility } from './validation.js';
 
 /**
  * 验证域名格式

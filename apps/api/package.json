@@ -5,8 +5,8 @@
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc && tsc-alias -p tsconfig-paths.json",
-    "start": "node start.mjs",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "clean": "rm -rf dist"
   },
