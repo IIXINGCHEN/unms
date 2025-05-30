@@ -10,20 +10,7 @@ const views = require("koa-views");
 const ratelimit = require("koa-ratelimit");
 const helmet = require("koa-helmet");
 
-// 安全加载 UNM 模块，在 Netlify 环境中可能不可用
-let unmAvailable = false;
-let unmModule = null;
-try {
-  unmModule = require("@unblockneteasemusic/server");
-  unmAvailable = true;
-  console.log("UNM module loaded successfully");
-} catch (error) {
-  console.warn("UNM module failed to load in Netlify environment:", error.message);
-  unmAvailable = false;
-}
-
-// 将 UNM 可用性状态传递给路由
-process.env.UNM_AVAILABLE = unmAvailable.toString();
+// 注意：UNM 模块的加载现在在路由文件中延迟进行，以避免模块级别的加载错误
 
 const router = require("./routes");
 

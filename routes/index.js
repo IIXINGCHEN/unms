@@ -1,25 +1,46 @@
 // 引入 Koa Router 模块，用于创建路由
 const Router = require("koa-router");
 
-// 安全加载 @unblockneteasemusic/server 模块，用于匹配和获取音乐链接
+// UNM 模块的延迟加载机制
 let match = null;
-let unmAvailable = false;
+let unmAvailable = null; // null 表示尚未检查，false 表示不可用，true 表示可用
 
-try {
-    // 检查环境变量中的 UNM 可用性状态
-    if (process.env.UNM_AVAILABLE === 'true') {
+/**
+ * 延迟加载 UNM 模块，只在实际需要时才尝试加载
+ * @returns {Function} match 函数或错误处理函数
+ */
+function getUnmMatch() {
+    // 如果已经检查过，直接返回结果
+    if (unmAvailable !== null) {
+        return match;
+    }
+
+    // 尝试加载 UNM 模块
+    try {
         match = require("@unblockneteasemusic/server");
         unmAvailable = true;
-    } else {
-        throw new Error("UNM module marked as unavailable");
+        console.log("UNM module loaded successfully");
+        return match;
+    } catch (error) {
+        console.warn("UNM module not available in current environment:", error.message);
+        unmAvailable = false;
+        // 创建一个模拟的 match 函数，返回错误信息
+        match = async () => {
+            throw new Error("UNM service is not available in this deployment environment");
+        };
+        return match;
     }
-} catch (error) {
-    console.warn("UNM module not available in current environment:", error.message);
-    unmAvailable = false;
-    // 创建一个模拟的 match 函数，返回错误信息
-    match = async () => {
-        throw new Error("UNM service is not available in this deployment environment");
-    };
+}
+
+/**
+ * 检查 UNM 模块是否可用
+ * @returns {boolean} 是否可用
+ */
+function isUnmAvailable() {
+    if (unmAvailable === null) {
+        getUnmMatch(); // 触发加载检查
+    }
+    return unmAvailable === true;
 }
 
 // 引入 package.json 文件。
@@ -457,7 +478,7 @@ router.get("/info", async (ctx) => {
 // 定义 "/test" 路径的 GET 请求处理器，用于测试 UNM 的 match 功能
 router.get("/test", async (ctx) => {
     // 检查 UNM 模块是否可用
-    if (!unmAvailable) {
+    if (!isUnmAvailable()) {
         setErrorResponse(ctx, "UNM 服务在当前部署环境中不可用。这通常发生在 Netlify Functions 等 serverless 环境中，因为 @unblockneteasemusic/server 模块可能与这些环境不兼容。请尝试使用其他 API 端点或联系管理员。", 503, {
             service: "UNM",
             environment: "Netlify Functions",
@@ -466,6 +487,9 @@ router.get("/test", async (ctx) => {
         });
         return;
     }
+
+    // 获取 match 函数
+    const matchFunction = getUnmMatch();
 
     // 在非生产环境记录路由开始处理的日志
     if (process.env.NODE_ENV !== 'production') {
@@ -502,7 +526,7 @@ router.get("/test", async (ctx) => {
     const startTime = Date.now();
     try {
         // 调用 UNM 的 match 函数获取原始数据
-        const rawData = await match(UNM_SETTINGS.testSongId, sourcesToTry);
+        const rawData = await matchFunction(UNM_SETTINGS.testSongId, sourcesToTry);
         // 清理原始数据，提取客户端所需字段 (包含 source)
         const clientData = sanitizeUnmResult(rawData);
         // 计算 match 函数执行耗时
@@ -537,7 +561,7 @@ router.get("/test", async (ctx) => {
 // 定义 "/match" 路径的 GET 请求处理器，用于根据 ID 和指定音源匹配歌曲
 router.get("/match", async (ctx) => {
     // 检查 UNM 模块是否可用
-    if (!unmAvailable) {
+    if (!isUnmAvailable()) {
         setErrorResponse(ctx, "UNM 服务在当前部署环境中不可用。这通常发生在 Netlify Functions 等 serverless 环境中，因为 @unblockneteasemusic/server 模块可能与这些环境不兼容。请尝试使用其他 API 端点或联系管理员。", 503, {
             service: "UNM",
             environment: "Netlify Functions",
@@ -546,6 +570,9 @@ router.get("/match", async (ctx) => {
         });
         return;
     }
+
+    // 获取 match 函数
+    const matchFunction = getUnmMatch();
 
     try {
         // 从查询参数中获取歌曲 ID
@@ -592,7 +619,7 @@ router.get("/match", async (ctx) => {
             console.log(`Attempting to match ID '${id}' using sources: ${serverSources.join(',')}`);
         }
         // 调用 UNM 的 match 函数
-        const rawData = await match(id, serverSources);
+        const rawData = await matchFunction(id, serverSources);
         // 清理原始数据 (包含 source)
         const clientData = sanitizeUnmResult(rawData);
 
