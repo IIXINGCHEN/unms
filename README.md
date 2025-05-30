@@ -2,7 +2,7 @@
 
 # UNM-Server (API 服务)
 
-一个基于 Node.js 和 Koa 实现的音乐 API 服务。它通过整合 `@unblockneteasemusic/server` 核心库和 GDStudio 兼容的API，为网易云等平台中可能无法播放的（灰色）歌曲提供可播放链接的替换方案。此外，服务还提供歌曲搜索、封面图片获取、歌词检索等功能，旨在为开发者提供一个稳定、全面的音乐数据接口。
+基于 Node.js 和 Koa 实现的音乐 API 服务。它通过整合 `@unblockneteasemusic/server` 核心库和 GDStudio 兼容的API，为网易云等平台中可能无法播放的（灰色）歌曲提供可播放链接的替换方案。此外，服务还提供歌曲搜索、封面图片获取、歌词检索等功能，旨在为开发者提供一个稳定、全面的音乐数据接口。
 
 **项目部署示例:** [https://api-unms.axingchen.com/](https://api-unms.axingchen.com/)
 **详细 API 文档页面:** [https://api-unms.axingchen.com/api-docs.html](https://api-unms.axingchen.com/api-docs.html)

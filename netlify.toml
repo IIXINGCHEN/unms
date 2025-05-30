@@ -2,8 +2,8 @@
 # 用于部署 UNM-Server 到 Netlify Functions
 
 [build]
-  # 构建命令
-  command = "npm run build:netlify"
+  # 构建命令 - 使用 pnpm 安装依赖，然后运行构建
+  command = "npm install && npm run build:netlify"
   # 发布目录
   publish = "public"
   # 函数目录
@@ -13,9 +13,11 @@
   # Node.js 版本
   NODE_VERSION = "18"
   # 包管理器设置
-  NPM_FLAGS = "--production=false"
+  NPM_FLAGS = "--production=false --shamefully-hoist"
   # 使用项目指定的 pnpm 版本
   PNPM_VERSION = "9.15.4"
+  # 确保使用 npm 进行依赖安装
+  NPM_CONFIG_SHAMEFULLY_HOIST = "true"
 
 # 函数配置
 [functions]

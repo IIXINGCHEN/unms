@@ -26,6 +26,7 @@
     "cookies": "^0.9.1",
     "core-util-is": "^1.0.3",
     "debug": "^4.4.1",
+    "delegates": "^1.0.0",
     "depd": "^2.0.0",
     "destroy": "^1.2.0",
     "dotenv": "^16.4.5",
